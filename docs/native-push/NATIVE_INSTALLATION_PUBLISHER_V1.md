@@ -172,3 +172,41 @@ records linked to genuine native-installation delegation provenance. Negative
 status/withdraw/revoke retain their original scoped semantics after retirement;
 they cannot mint a fresh role or provider effect. The generic surface compiled
 closed gate, existing operator paths and activity-profile gates are unchanged.
+
+The existing withdrawal wire retains the **original publication consent
+revision**. Its negative authority is the separately committed SQLite off
+revision greater than that publication, or the same original PairJournal row
+already retired. It is never a fabricated higher wire revision. Genuine unpair
+also queues an authenticated publisher withdrawal so both the original
+withdrawal and retirement acknowledgements can be obtained. The bounded private
+negative ledger may prune only after BOTH exact original journal ACK markers
+are committed, with original event/body/origin/publisher/pair binding intact.
+Pruning uses the same private writer lock and atomic readback. Time, status,
+missing rows, a single ACK, malformed state or capacity pressure cannot discard
+pending credentials or create a positive restore path.
+
+## Negative-only unknown-outcome hardening
+
+The selected private negative credential record is one per original committed
+PairJournal registration binding plus actual credential, origin/installation
+and exact native pair context. It is retained only after a genuine resolver
+result and an exact durably staged SQLite original, **before** publication RPC.
+It covers only matching actual SQL originals; it is never positive restoration,
+a replacement credential, a fabricated publication ACK or a signing grant.
+Operation digests are comparison metadata and cannot substitute for SQL rows.
+The private format is version 2; older or malformed state is unavailable, never
+silently migrated, reset or interpreted as a new positive installation.
+
+For a negative unknown publication, the active authenticated original API
+principal may set its own covering pair tombstone when that operation has no
+publication row. If a row exists, all original fields must match. A permanent
+retired pair remains closed to later positive publication, first trust and
+roles. Negative closure is independent of positive signed-app-policy expiry.
+The active-publication budget excludes history only after both authenticated
+withdrawal and retirement decisions; original history is retained unchanged.
+
+Private custody is pruned only when **all** matching actual SQL originals and
+all retained operation references have their exact genuine withdrawal and
+retirement ACKs, with the original pair retired. Missing, mismatched, pending
+or unknown rows remain. Grouping removes duplicate private tokens for repeated
+operations without discarding their original proofs or minting any authority.
