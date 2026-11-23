@@ -1250,6 +1250,53 @@ API_41_WORKFLOWS = frozenset(('.github/workflows/ci-cd.yml', '.github/workflows/
 API_41_VERSION_SOURCES = frozenset(('package-lock.json', 'package.json', 'scripts/qualify_rendezvous_product_build.mjs', 'src/releaseMetadata.ts'))
 SOURCE_PROVENANCE['api_41_org_policy_source_delta_sha256'] = API_41_DELTA_SHA256
 
+CANONICAL_PIN_DELTA_PATH = 'docs/rendezvous/api-canonical-workflow-pin-reset-v1.json'
+CANONICAL_PIN_DELTA_SHA256 = '56fde11218670c5e22d23e9fe43eac373cec36e80501eafb563cf668f8369c8e'
+SOURCE_PROVENANCE['canonical_workflow_pin_reset_sha256'] = CANONICAL_PIN_DELTA_SHA256
+
+
+def canonical_pin_delta():
+    delta = pinned_working_proof(CANONICAL_PIN_DELTA_PATH, CANONICAL_PIN_DELTA_SHA256)
+    require(set(delta) == {'schema_version', 'scope', 'old_pin', 'new_pin', 'workflow_changes', 'manifest_changes', 'consumed_blobs', 'public_activation_allowed', 'production_effect_authorized'}
+            and type(delta['schema_version']) is int and delta['schema_version'] == 1
+            and delta['scope'] == 'EXACT_CANONICAL_WORKFLOW_PIN_RESET_NOT_ACTIVATION'
+            and delta['old_pin'] == '4025a68add8ba98f1f2e0307d7f3998e45c0d9ef'
+            and delta['new_pin'] == 'ef8fe39c66689822887fee3720c7500eaa76955a'
+            and delta['public_activation_allowed'] is False and delta['production_effect_authorized'] is False
+            and set(delta['workflow_changes']) == API_41_WORKFLOWS
+            and set(delta['manifest_changes']) == API_SHARED_GOVERNANCE_MANIFESTS)
+    return delta
+
+
+def canonical_pin_previous(name, raw):
+    delta = canonical_pin_delta()
+    changes = {**delta['workflow_changes'], **delta['manifest_changes']}
+    if name not in changes:
+        return raw
+    change = changes[name]
+    require(digest(raw) == change['after'])
+    if name in delta['workflow_changes']:
+        require(set(change) == {'before', 'after', 'replacements'}
+                and type(change['replacements']) is int and change['replacements'] in (1, 2))
+        before = ('@' + delta['old_pin']).encode()
+        after = ('@' + delta['new_pin']).encode()
+        require(raw.count(after) == change['replacements'] and before not in raw)
+        raw = raw.replace(after, before)
+    else:
+        require(set(change) == {'before', 'after', 'replacements'})
+        seen = set()
+        for item in change['replacements']:
+            require(set(item) == {'input', 'before', 'after'} and item['input'] in delta['workflow_changes'] and item['input'] not in seen)
+            seen.add(item['input'])
+            pin = delta['workflow_changes'][item['input']]
+            before = f'"{item["input"]}": "{pin["before"]}"'.encode()
+            after = f'"{item["input"]}": "{pin["after"]}"'.encode()
+            require(item['before'].encode() == before and item['after'].encode() == after and raw.count(after) == 1)
+            raw = raw.replace(after, before, 1)
+    require(digest(raw) == change['before'])
+    return raw
+
+
 def api_41_delta():
     delta = pinned_working_proof(API_41_DELTA_PATH, API_41_DELTA_SHA256)
     require(set(delta) == {'schema_version', 'scope', 'workflow_changes', 'version_source_changes', 'public_activation_allowed', 'production_effect_authorized'}
@@ -1262,6 +1309,8 @@ def api_41_delta():
 
 def api_41_previous_workflow(name):
     raw = safe_path(name).read_bytes()
+    if name in API_41_WORKFLOWS:
+        raw = canonical_pin_previous(name, raw)
     if name not in API_41_WORKFLOWS:
         return raw
     change = api_41_delta()['workflow_changes'][name]
@@ -1291,6 +1340,8 @@ def api_41_manifest_delta():
 
 
 def api_41_previous_manifest(name, raw):
+    if name in API_SHARED_GOVERNANCE_MANIFESTS:
+        raw = canonical_pin_previous(name, raw)
     changes = api_41_manifest_delta()['manifest_changes']
     if name not in changes:
         return raw
@@ -1435,7 +1486,7 @@ def baseline():
         api_41_previous_workflow(name)
     for name, change in {**delta41['workflow_changes'], **delta41['version_source_changes']}.items():
         require(set(change) == ({'before', 'after', 'replacements'} if name in API_41_WORKFLOWS else {'before', 'after'}))
-        require(digest(safe_path(name).read_bytes()) == change['after'])
+        require(digest(canonical_pin_previous(name, safe_path(name).read_bytes())) == change['after'])
         for target in (sources, refs):
             if name in target:
                 require(target[name] == change['before'])
@@ -1461,6 +1512,14 @@ def baseline():
                 require(target[name] == change['before'])
                 target[name] = change['after']
     refs[API_41_MANIFEST_DELTA_PATH] = API_41_MANIFEST_DELTA_SHA256
+    canonical = canonical_pin_delta()
+    for name, change in {**canonical['workflow_changes'], **canonical['manifest_changes']}.items():
+        canonical_pin_previous(name, safe_path(name).read_bytes())
+        for target in (sources, refs):
+            if name in target:
+                require(target[name] == change['before'])
+                target[name] = change['after']
+    refs[CANONICAL_PIN_DELTA_PATH] = CANONICAL_PIN_DELTA_SHA256
     return sources, refs
 
 
