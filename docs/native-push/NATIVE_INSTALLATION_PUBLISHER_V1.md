@@ -85,8 +85,9 @@ credentials. Rotation within the same original pair still mismatches its
 original custody and never generates a replacement automatically. A fresh pair
 requires its own genuinely committed pairing and explicit new channel opt-in.
 
-After a genuine own-publication ACK, Core commits and reads back private atomic
-negative-only credential custody before returning any native key challenge.
+After a genuine resolver response and exact durable SQLite staging, Core commits
+and reads back private atomic negative-only credential custody before sending
+the publication RPC or returning any native key challenge.
 The existing original SQLite pair-retirement journal may use that exact
 publication/credential to withdraw or retire after unpair or restart. This is
 necessary when the original ConfigEntry has been removed. This private record
