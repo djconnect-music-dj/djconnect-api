@@ -96,3 +96,52 @@ combinations are denied. Revoked or rotated credentials remain denied by the
 server's original ID/hash check; no replacement principal is adopted. The
 negative writer retains its lock through an actual pending atomic write even
 if the requesting task is cancelled. Private tokens are never exported.
+
+## Signed Widget delegation and role acknowledgement
+
+`POST /v1/push/native/installation/issuer/enrol` accepts ordinary installation
+bearer authentication and canonical JSON with exactly `contract_version:1`,
+`first_key_receipt`, `delegation` and `signature`. `first_key_receipt` is the
+exact registered-key ACK retained by the winning continuation. `delegation`
+is the existing `djc-surface-issuer/1` Enrolment without field changes, as
+specified by `surface_issuer_wire.py` / API `surface-push/issuer-wire.ts`.
+The P-256 raw-64 signature is base64url without padding, over canonical JSON:
+
+```
+["djc-installation-surface-delegation/1", "POST",
+ "/v1/push/native/installation/issuer/enrol", first_key_receipt, delegation]
+```
+
+The server requires its own active original credential ID/hash, the EXACT
+matching registered native first-key row/receipt, and the original pair
+publication/consent at commit. Initial enrol must occur within the first-key
+winning window. It verifies the signature with that row's original SPKI and
+cryptographically compares its public coordinates with `delegation.public_key`.
+Surface key thumbprints and native SPKI digests remain different namespaces.
+`approval_reference` equals the actual native registry generation and
+`install_id` equals the actual native API installation ID. Only Widget policy,
+null activity profile, no external content, and the explicitly selected actual
+native target are eligible; no Watch/Live Activity alias or operator bypass.
+
+A successful winner returns exactly:
+
+- `contract_version:1`, `success:true`, `state:"enrolled"`, `replayed:false`;
+- `delegation_id`, `delegation_revision:1`, `key_thumbprint`, `scope_digest`,
+  `expires_at_ms` from the existing exact enrolled delegation;
+- `enrol_operation_id`, `install_credential_id`, `native_operation_id`,
+  `native_api_installation_id`, `native_registry_generation`;
+- `enrolment_sha256`, SHA-256 of the exact canonical signing array above.
+
+The existing `scope_digest` continues to bind all original Surface fields,
+public key and exact policy. `expires_at_ms` is the accepted original
+`policy.original_grant_expires_at_ms`, bounded by its actual Core role grant,
+the existing maximum eight-hour policy and the selected server policy expiry.
+It is NOT a 30-day native-key lifetime and does not renew the initial first-key
+challenge. Replay, unknown, status and withdrawal cannot supply a winning ACK.
+
+Only the original server-private first-key winning continuation can consume
+that exact actual ACK into one new WidgetRoleKeyCustody. That distinct role
+retains the same actual signer, pair, loaded credential and consent, with its
+own original role expiry/clock mapping. The old first-key witness is consumed,
+not extended. No raw signer, caller JSON constructor or restored status creates
+role custody. Actual v4 read/v3 native-clock qualification remains separate.
