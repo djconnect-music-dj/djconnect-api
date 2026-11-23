@@ -3,7 +3,7 @@
   "base": "e39d5a7b03e1b8b194e4c8b0d0ad05a5f494ecb8",
   "esbuild_version": "0.28.1",
   "inputs_sha256": {
-    ".github/workflows/host-app-wake-source.yml": "c4e9a969fd746d5c88e6ebca9f402c725f88a5365fae3cdeeeb36815e5565a0b",
+    ".github/workflows/host-app-wake-source.yml": "bbdc3b4b89e355e47d268f6bf1c36a710562184dbdf764518c607c4c5a68fd1b",
     "LICENSE": "9056c5ecea9aa888ff0a79e9b07a91470a5c2e782dc9ba1774dce70aae031d44",
     "coordinator/host-app-wake/README.md": "d899c15beaa1c5c16989ea17d03a49871dbbbab01941a142cb86dd74935453e1",
     "coordinator/host-app-wake/build-source.mjs": "3ea8a5339a4a7781f4c5b5c9f142e5d616256a741693d09ba7eed80638cda918",

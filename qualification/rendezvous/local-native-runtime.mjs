@@ -176,15 +176,33 @@ export async function sourceSnapshot(){
  need(sha(summaryRaw)==='15a78327a997ada80926e8443715787951b2a18967a7ddaac90fa373cd6efd32'&&plan.reference_hashes[summaryPath]===sha(summaryRaw)&&provenance.api_governance_summary_pin_delta_sha256===sha(summaryRaw));
  const summary=JSON.parse(summaryRaw);
  need(Object.keys(summary).sort().join(',')==='manifest_changes,production_effect_authorized,public_activation_allowed,schema_version,scope,workflow_changes'&&summary.schema_version===1&&summary.scope==='EXACT_API_GOVERNANCE_SUMMARY_PIN_SOURCE_ONLY_NOT_ACTIVATION'&&summary.public_activation_allowed===false&&summary.production_effect_authorized===false);
+ const canonicalPath='docs/rendezvous/api-canonical-workflow-pin-reset-v1.json',canonicalRaw=await readFile(join(repo,canonicalPath));
+ need(sha(canonicalRaw)==='56fde11218670c5e22d23e9fe43eac373cec36e80501eafb563cf668f8369c8e'&&plan.reference_hashes[canonicalPath]===sha(canonicalRaw)&&provenance.canonical_workflow_pin_reset_sha256===sha(canonicalRaw));
+ const canonical=JSON.parse(canonicalRaw);
+ need(Object.keys(canonical).sort().join(',')==='consumed_blobs,manifest_changes,new_pin,old_pin,production_effect_authorized,public_activation_allowed,schema_version,scope,workflow_changes'&&canonical.schema_version===1&&canonical.scope==='EXACT_CANONICAL_WORKFLOW_PIN_RESET_NOT_ACTIVATION'&&canonical.old_pin==='4025a68add8ba98f1f2e0307d7f3998e45c0d9ef'&&canonical.new_pin==='ef8fe39c66689822887fee3720c7500eaa76955a'&&canonical.public_activation_allowed===false&&canonical.production_effect_authorized===false);
+ const canonicalPrevious=(name,raw)=>{
+  const change=canonical.workflow_changes[name]||canonical.manifest_changes[name];if(!change)return raw;
+  need(sha(Buffer.from(raw))===change.after);
+  if(canonical.workflow_changes[name]){
+   need(Object.keys(change).sort().join(',')==='after,before,replacements'&&Number.isInteger(change.replacements)&&[1,2].includes(change.replacements));
+   const before='@'+canonical.old_pin,after='@'+canonical.new_pin;
+   need(raw.split(after).length===change.replacements+1&&!raw.includes(before));raw=raw.split(after).join(before);
+  }else{
+   need(Object.keys(change).sort().join(',')==='after,before,replacements'&&Array.isArray(change.replacements));const seen=new Set();
+   for(const item of change.replacements){const pin=canonical.workflow_changes[item.input];need(Object.keys(item).sort().join(',')==='after,before,input'&&pin&&!seen.has(item.input));seen.add(item.input);const before=JSON.stringify(item.input)+': '+JSON.stringify(pin.before),after=JSON.stringify(item.input)+': '+JSON.stringify(pin.after);need(item.before===before&&item.after===after&&raw.split(after).length===2);raw=raw.replace(after,before);}
+  }
+  need(sha(Buffer.from(raw))===change.before);return raw;
+ };
  const delta41Path='docs/rendezvous/api-4-1-org-policy-source-delta-v1.json',delta41Raw=await readFile(join(repo,delta41Path));
  need(sha(delta41Raw)==='91645102ead4fa549b1b71c5d131516ea14b3024c9213518e27bb1aeee01e010'&&plan.reference_hashes[delta41Path]===sha(delta41Raw)&&provenance.api_41_org_policy_source_delta_sha256===sha(delta41Raw));
  const delta41=JSON.parse(delta41Raw),delta41Workflows=[".github/workflows/ci-cd.yml", ".github/workflows/codeql.yml", ".github/workflows/host-app-wake-receiving.yml", ".github/workflows/host-app-wake-source.yml", ".github/workflows/installation-principal-data.yml", ".github/workflows/installation-registry-transactions.yml", ".github/workflows/native-proof-data-journal.yml", ".github/workflows/native-proof-transcript.yml", ".github/workflows/post-merge-release-evidence.yml", ".github/workflows/principal-possession-data.yml", ".github/workflows/push-coordinator-source.yml", ".github/workflows/reusable-workflow-guard.yml", ".github/workflows/rich-delivery-adapter.yml", ".github/workflows/rich-session-data-profile.yml", ".github/workflows/semgrep.yml", ".github/workflows/surface-enrollment-source.yml", ".github/workflows/trusted-delivery.yml", ".github/workflows/watch-moment-alert-source.yml", ".github/workflows/widget-first-key-source.yml", ".github/workflows/worker-do-registry-source.yml"],delta41Versions=["package-lock.json", "package.json", "scripts/qualify_rendezvous_product_build.mjs", "src/releaseMetadata.ts"];
  need(Object.keys(delta41).sort().join(',')==='production_effect_authorized,public_activation_allowed,schema_version,scope,version_source_changes,workflow_changes'&&delta41.schema_version===1&&delta41.scope==='EXACT_API_4_1_ORGANIZATION_PIN_SOURCE_ONLY_NOT_ACTIVATION'&&delta41.public_activation_allowed===false&&delta41.production_effect_authorized===false);
  need(JSON.stringify(Object.keys(delta41.workflow_changes).sort())===JSON.stringify(delta41Workflows)&&JSON.stringify(Object.keys(delta41.version_source_changes).sort())===JSON.stringify(delta41Versions));
+ need(JSON.stringify(Object.keys(canonical.workflow_changes).sort())===JSON.stringify(delta41Workflows));
  const delta41Previous={};
  for(const [name,change] of Object.entries(delta41.workflow_changes)){
   need(Object.keys(change).sort().join(',')==='after,before,replacements'&&Array.isArray(change.replacements)&&change.replacements.length>0);
-  let current=await readFile(join(repo,name),'utf8');need(sha(Buffer.from(current))===change.after);
+  let current=canonicalPrevious(name,await readFile(join(repo,name),'utf8'));need(sha(Buffer.from(current))===change.after);
   for(const item of change.replacements){need(Object.keys(item).sort().join(',')==='after,before'&&typeof item.before==='string'&&typeof item.after==='string'&&item.before!==item.after&&current.split(item.after).length===2);current=current.replace(item.after,item.before);}
   need(sha(Buffer.from(current))===change.before);delta41Previous[name]=current;
  }
@@ -193,9 +211,10 @@ export async function sourceSnapshot(){
  need(sha(manifest41Raw)==='339f9911e7dcd8a7a5d6aaca6edba4dd574261318faf24647aa228429b40f760'&&plan.reference_hashes[manifest41Path]===sha(manifest41Raw)&&provenance.api_41_manifest_refresh_delta_sha256===sha(manifest41Raw));
  const manifest41=JSON.parse(manifest41Raw),manifest41Files=['coordinator/host-app-wake-receiving/runtime/source-inputs.json','coordinator/host-app-wake/source-manifest.json','coordinator/installation-principal/source-manifest.json','coordinator/installation-registry/source-manifest.json','coordinator/principal-possession/source-manifest.json','coordinator/rich-delivery/source-manifest.json','coordinator/rich-session/source-manifest.json','coordinator/source-manifest.json','coordinator/worker-do/source-manifest.json','qualification/watch-moment/source-manifest.json'].sort(),manifest41Previous={};
  need(Object.keys(manifest41).sort().join(',')==='manifest_changes,production_effect_authorized,public_activation_allowed,schema_version,scope'&&manifest41.schema_version===1&&manifest41.scope==='EXACT_API_4_1_ACTIVE_MANIFEST_PINS_NOT_ACTIVATION'&&manifest41.public_activation_allowed===false&&manifest41.production_effect_authorized===false&&JSON.stringify(Object.keys(manifest41.manifest_changes).sort())===JSON.stringify(manifest41Files));
+ need(JSON.stringify(Object.keys(canonical.manifest_changes).sort())===JSON.stringify(manifest41Files));
  for(const [name,change] of Object.entries(manifest41.manifest_changes)){
   need(Object.keys(change).sort().join(',')==='after,before,replacements'&&Array.isArray(change.replacements)&&change.replacements.length>0);
-  let current=await readFile(join(repo,name),'utf8');need(sha(Buffer.from(current))===change.after);const seen=new Set();
+  let current=canonicalPrevious(name,await readFile(join(repo,name),'utf8'));need(sha(Buffer.from(current))===change.after);const seen=new Set();
   for(const item of change.replacements){const pin=delta41.workflow_changes[item.input]||delta41.version_source_changes[item.input];need(Object.keys(item).sort().join(',')==='after,before,input'&&pin&&!seen.has(item.input));seen.add(item.input);const before=JSON.stringify(item.input)+': '+JSON.stringify(pin.before),after=JSON.stringify(item.input)+': '+JSON.stringify(pin.after);need(item.before===before&&item.after===after&&current.split(after).length===2);current=current.replace(after,before);}
   need(sha(Buffer.from(current))===change.before);manifest41Previous[name]=current;
  }
@@ -282,6 +301,7 @@ export async function sourceSnapshot(){
   if(Object.hasOwn(shared.source_changes,name)){need(shared.source_changes[name].before===expected);expected=shared.source_changes[name].after;}
   if(Object.hasOwn(summary.workflow_changes,name)){need(summary.workflow_changes[name].before===expected);expected=summary.workflow_changes[name].after;}
   const final41=delta41.workflow_changes[name]||delta41.version_source_changes[name];if(final41){need(final41.before===expected);expected=final41.after;}
+  if(canonical.workflow_changes[name]){need(canonical.workflow_changes[name].before===expected);expected=canonical.workflow_changes[name].after;}
   need(plan.source_hashes[name]===expected);
  }
  const pins={...root.source_hashes,...plan.source_hashes,...plan.reference_hashes};
