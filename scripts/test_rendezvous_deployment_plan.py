@@ -9,6 +9,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+# Reuse the existing mandatory Python qualification entrypoint.
+from scripts.test_canonical_workflow_pin_reset import CanonicalPinResetTests
+
 spec = importlib.util.spec_from_file_location('plan_validator', Path(__file__).with_name('validate_rendezvous_deployment_plan.py'))
 v = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(v)
@@ -775,6 +778,3 @@ class PreparationTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-# Reuse the existing mandatory Python qualification entrypoint.
-from scripts.test_canonical_workflow_pin_reset import CanonicalPinResetTests
