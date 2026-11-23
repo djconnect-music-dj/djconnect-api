@@ -60,3 +60,16 @@ not turn on an empty surface profile, reuse HostWake as Widget authority or
 change independent Watch/Live Activities/Moments consent. All failure responses
 are content-free and no-store. Bearers, private keys and provider secrets never
 enter diagnostic records or qualification artifacts.
+
+## Selected limited development admission
+
+The platform owner selected `ios-native-push-development-40532/1`, expiring
+2026-12-23T10:00:00Z, for the actually signed iOS artifact with application ID
+`ZEML4LPXH4.dev.djconnect.ios`, bundle build `40532` and App Attest environment
+`development`. The server admits launch-validation category 3 (`AwAAAA==`) as
+an explicit policy choice, not a claim that Apple has already attested it.
+Actual Apple evidence must prove this exact tuple before any registration ACK.
+A later build requires an independently selected new policy, never a wildcard.
+All shorter original source, request and channel expiries remain bounded by
+minimum; the policy window does not renew them. This is configuration selection,
+not native/provider or physical acceptance.
