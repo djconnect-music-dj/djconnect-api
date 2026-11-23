@@ -9,6 +9,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+# Reuse the existing mandatory Python qualification entrypoint.
+from scripts.test_canonical_workflow_pin_reset import CanonicalPinResetTests
+
 spec = importlib.util.spec_from_file_location('plan_validator', Path(__file__).with_name('validate_rendezvous_deployment_plan.py'))
 v = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(v)
@@ -71,7 +74,10 @@ class PreparationTests(unittest.TestCase):
                 previous = v.api_41_previous_manifest(name, raw)
                 self.assertEqual(v.digest(previous), change['before'])
                 for item in change['replacements']:
-                    candidate.write_bytes(raw.replace(item['after'].encode(), b'"tampered": "invalid"', 1))
+                    active = next((entry['after'] for entry in v.canonical_pin_delta()['manifest_changes'][name]['replacements'] if entry['input'] == item['input']), item['after'])
+                    modified = raw.replace(active.encode(), b'"tampered": "invalid"', 1)
+                    self.assertNotEqual(modified, raw)
+                    candidate.write_bytes(modified)
                     with self.subTest(manifest=name, source=item['input']), patch.object(v, 'safe_path', side_effect=lambda path: candidate if path == name else original_safe_path(path)):
                         with self.assertRaises(ValueError):
                             v.api_41_previous_manifest(name, candidate.read_bytes())
@@ -135,7 +141,7 @@ class PreparationTests(unittest.TestCase):
                          v.WRANGLER_4160_PROVENANCE, v.WRANGLER_4160_DELTA_PATH,
                          *v.ORG_GOVERNANCE_SOURCES, *v.ORG_GOVERNANCE_REFERENCES,
                          v.ORG_GOVERNANCE_DELTA_PATH,
-                         v.API_CORE_IDENTITY_DELTA_PATH, v.API_ORG_RELEASE_DELTA_PATH, v.API_ORG_CORE_AUTHORITY_DELTA_PATH,
+                         v.CANONICAL_PIN_DELTA_PATH, v.API_CORE_IDENTITY_DELTA_PATH, v.API_ORG_RELEASE_DELTA_PATH, v.API_ORG_CORE_AUTHORITY_DELTA_PATH,
                          v.API_SHARED_GOVERNANCE_DELTA_PATH, *v.API_SHARED_GOVERNANCE_WORKFLOWS, *v.API_SHARED_GOVERNANCE_MANIFESTS,
                          v.API_GUARD_REFERENCE_DELTA_PATH, v.API_GOVERNANCE_SUMMARY_DELTA_PATH, 'scripts/check_reusable_workflow_refs.sh',
                          v.CORE_GOVERNANCE_TRANSITION_PATH, *v.CORE_GOVERNANCE_WORKFLOWS,
@@ -155,6 +161,8 @@ class PreparationTests(unittest.TestCase):
             pinned.update({name: change['after'] for name, change in {**delta41['workflow_changes'], **delta41['version_source_changes']}.items()})
             manifest41 = json.loads((canonical / v.API_41_MANIFEST_DELTA_PATH).read_bytes())
             pinned.update({name: change['after'] for name, change in manifest41['manifest_changes'].items()})
+            canonical_delta = v.canonical_pin_delta()
+            pinned.update({name: change['after'] for name, change in {**canonical_delta['workflow_changes'], **canonical_delta['manifest_changes']}.items()})
             for path in additions:
                 raw = (canonical / path).read_bytes()
                 expected = pinned[path]

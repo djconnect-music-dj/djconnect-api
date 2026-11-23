@@ -1,0 +1,244 @@
+{
+  "consumed_blobs": {
+    ".github/workflows/djconnect-codeql-191.yml": {
+      "new": "af302b8bf48bc80f8621263a70f21d878158a498",
+      "old": "af302b8bf48bc80f8621263a70f21d878158a498"
+    },
+    ".github/workflows/djconnect-semgrep-733.yml": {
+      "new": "e54023e52b839f33b4269bd3233d211813a38f63",
+      "old": "e54023e52b839f33b4269bd3233d211813a38f63"
+    },
+    ".github/workflows/post-merge-release-evidence-org-487.yml": {
+      "new": "af8d40363bb343e0b443c069967bbbf932d14fd8",
+      "old": "af8d40363bb343e0b443c069967bbbf932d14fd8"
+    },
+    ".github/workflows/software-assurance-governance-aabd.yml": {
+      "new": "5b96d522104a204ca81379fd57dec54452fc9c71",
+      "old": "5b96d522104a204ca81379fd57dec54452fc9c71"
+    },
+    ".github/workflows/trusted-delivery-qualification.yml": {
+      "new": "2df2434f5ba462af5fd043554f432bacb5144532",
+      "old": "2df2434f5ba462af5fd043554f432bacb5144532"
+    }
+  },
+  "manifest_changes": {
+    "coordinator/host-app-wake-receiving/runtime/source-inputs.json": {
+      "after": "a56712680c635fc8d3cc435f44d73311c26f67e8dfda9a5561254ae56279e49c",
+      "before": "24daebbd36e9cf0847a7f049eecca32133c5aaddc155a82f2a542bd613da01ac",
+      "replacements": [
+        {
+          "after": "\".github/workflows/host-app-wake-receiving.yml\": \"b5b58104dedb47a98b8bd3eef64ffeb0a9f2a9eec4a22f604c7bafd251bcc843\"",
+          "before": "\".github/workflows/host-app-wake-receiving.yml\": \"e84e48af21685efe2f7c01282b7fa73061bc1d5c9725831ca58d8fe5fc4de0e8\"",
+          "input": ".github/workflows/host-app-wake-receiving.yml"
+        }
+      ]
+    },
+    "coordinator/host-app-wake/source-manifest.json": {
+      "after": "07ca7491b56bd8b91fcd75647947a2ad9952201bfceb44bdb1b97673a732b3a0",
+      "before": "4f0ae3d60006a96fa40a3623f5d21fdfdd2d90da933adb5578d67bc243cd6f13",
+      "replacements": [
+        {
+          "after": "\".github/workflows/host-app-wake-source.yml\": \"bbdc3b4b89e355e47d268f6bf1c36a710562184dbdf764518c607c4c5a68fd1b\"",
+          "before": "\".github/workflows/host-app-wake-source.yml\": \"c4e9a969fd746d5c88e6ebca9f402c725f88a5365fae3cdeeeb36815e5565a0b\"",
+          "input": ".github/workflows/host-app-wake-source.yml"
+        }
+      ]
+    },
+    "coordinator/installation-principal/source-manifest.json": {
+      "after": "ab5d13673daa363e6061c2f2358ea973bc8f29a213944770c4576883cecffcfa",
+      "before": "2e33393f2de99d512f8363aeac495412e972fd36f751428fb523160a4d6d90cb",
+      "replacements": [
+        {
+          "after": "\".github/workflows/installation-principal-data.yml\": \"d72ed71fdac862494130c3265dff68650db57407d24660e06dbe2dc710a639ab\"",
+          "before": "\".github/workflows/installation-principal-data.yml\": \"fd13fb6ef79b7d0ba6dc63ba248d900853a3fed0eff4038c460509419272d543\"",
+          "input": ".github/workflows/installation-principal-data.yml"
+        }
+      ]
+    },
+    "coordinator/installation-registry/source-manifest.json": {
+      "after": "baa22ec0e2b6f539d92d667b852566bf141f56655bfbf2a504c70b0072374289",
+      "before": "166f206f577cc02ae272c4bb01dcfe79ae944740935c5f0909e008ec782097ed",
+      "replacements": [
+        {
+          "after": "\".github/workflows/installation-registry-transactions.yml\": \"301b51fcb39d5a8a11b2b8a4eba78f3816b37efacb2fef8403825cf130cd5f3e\"",
+          "before": "\".github/workflows/installation-registry-transactions.yml\": \"4fd3db7199e4abeb885fb52e644356b639684057b386cacd6176e523cea3a320\"",
+          "input": ".github/workflows/installation-registry-transactions.yml"
+        }
+      ]
+    },
+    "coordinator/principal-possession/source-manifest.json": {
+      "after": "3bf4eea7248c3f74f0a7cd9a29debda6b852e9aaffd730595060aeddffcf8e8b",
+      "before": "f7d4abd3552a53eed539098fd94ec1670c92ec1fa6f159181378100b689218e7",
+      "replacements": [
+        {
+          "after": "\".github/workflows/principal-possession-data.yml\": \"2244bda80be5b2851cdeede0f1a4767447a9a4eece3a7620616135b9213dadfb\"",
+          "before": "\".github/workflows/principal-possession-data.yml\": \"51afc78647279b127a858c36fd281ac1741be97cef48c62b635f4f99eb7a3dc0\"",
+          "input": ".github/workflows/principal-possession-data.yml"
+        }
+      ]
+    },
+    "coordinator/rich-delivery/source-manifest.json": {
+      "after": "5aaaadfcf6230ef6d0fc01e7f8cd1c3b71e207beeb6648ebce455eb3494f0078",
+      "before": "cf3069db6588824bdaaef2a23efcc4ed937d06eda0b3f063b89930ae20208492",
+      "replacements": [
+        {
+          "after": "\".github/workflows/rich-delivery-adapter.yml\": \"92df2e92edb1e222ad447d1449b7bd076be8e12ad47010206f409c42e86ccffe\"",
+          "before": "\".github/workflows/rich-delivery-adapter.yml\": \"ba1b23cb6ea269bf6c335865b0ccb61c64bf6cab9e871342c9e826728ab4f9b9\"",
+          "input": ".github/workflows/rich-delivery-adapter.yml"
+        }
+      ]
+    },
+    "coordinator/rich-session/source-manifest.json": {
+      "after": "1629aaa55ede7c400d7b4ab8c7559fc093f9423c939b3d233ef67562d868fba9",
+      "before": "fb1b9fa9fcdc32f6d2ecc458e650f7b8962d5c04f0d8cabcdbfb29c56e47bd9e",
+      "replacements": [
+        {
+          "after": "\".github/workflows/rich-session-data-profile.yml\": \"adfcc32b931999261299b5b6f038ebc166fa5b4c2781dc0e1c1ca79f07081718\"",
+          "before": "\".github/workflows/rich-session-data-profile.yml\": \"c2343f7e6a28b79b2c7b1526e4187aadccc9f59abe1a0862bff61c54a66951b3\"",
+          "input": ".github/workflows/rich-session-data-profile.yml"
+        }
+      ]
+    },
+    "coordinator/source-manifest.json": {
+      "after": "ff0698c6b9bd02aa14d05f4fbacce046c87a219095c88096f072a66b386cc359",
+      "before": "d4e458adc1c45b1cef45eb8949b5e4b50b29ea08ee2a939555fc305714268aff",
+      "replacements": [
+        {
+          "after": "\".github/workflows/push-coordinator-source.yml\": \"27fa53d49a1b92f3d8bbd850b257df4afebc7bd5ac712224e6a3afe5e3b513fb\"",
+          "before": "\".github/workflows/push-coordinator-source.yml\": \"9ade53b48ef52f65b56838aa6852db3487f1252b8176ba319b39e9d2162f2ec8\"",
+          "input": ".github/workflows/push-coordinator-source.yml"
+        }
+      ]
+    },
+    "coordinator/worker-do/source-manifest.json": {
+      "after": "b85e50464a5d55a4bbcf3a93d84ae55540ad839ae49205c523969780f54beaef",
+      "before": "fc7f386158fce9a92fd19e9e9f65488a831e0642092093376af070b527d7b89a",
+      "replacements": [
+        {
+          "after": "\".github/workflows/worker-do-registry-source.yml\": \"b92235c93ff1a277d35800f2cc6637c2d8f88e230bed2656cc9b711d60d2eea2\"",
+          "before": "\".github/workflows/worker-do-registry-source.yml\": \"1dd9804009649428212779f6d420192e2d6c8e21e65c19d1c453cf81dd065896\"",
+          "input": ".github/workflows/worker-do-registry-source.yml"
+        }
+      ]
+    },
+    "qualification/watch-moment/source-manifest.json": {
+      "after": "9dc42edab33102e0bbb04ebe5f2ce39bef9a98b53c7a784c4112b8f428ae3481",
+      "before": "88421df7a3dd600507487182d5d91d512822cb08e3f346f5a3f842034c6afc77",
+      "replacements": [
+        {
+          "after": "\".github/workflows/watch-moment-alert-source.yml\": \"da7f08d284fa8c9d24134f4aa00bc7d962406105f41551bc752064dfda79f007\"",
+          "before": "\".github/workflows/watch-moment-alert-source.yml\": \"0c9b2da7ef6b69162766068fa72e1cfa9bb7fe8a392a7a54d0fa3bae727a6ead\"",
+          "input": ".github/workflows/watch-moment-alert-source.yml"
+        }
+      ]
+    }
+  },
+  "new_pin": "ef8fe39c66689822887fee3720c7500eaa76955a",
+  "old_pin": "4025a68add8ba98f1f2e0307d7f3998e45c0d9ef",
+  "production_effect_authorized": false,
+  "public_activation_allowed": false,
+  "schema_version": 1,
+  "scope": "EXACT_CANONICAL_WORKFLOW_PIN_RESET_NOT_ACTIVATION",
+  "workflow_changes": {
+    ".github/workflows/ci-cd.yml": {
+      "after": "0be97161b2314e8bbbe03772b8995be0dca698d52a22b8ff7d9cadb9df9dc9ff",
+      "before": "3bb64ec946c186d166dae69f67f20a1c019385f923b1d30bf3ce4fdc87ed6986",
+      "replacements": 1
+    },
+    ".github/workflows/codeql.yml": {
+      "after": "31300da6417c6bead3d821d26cc65e3bfd7a225d425e6a89db3e6d7a505b3edf",
+      "before": "28ca1dac316e422654e40a5b42a3ec932e230a5c22163736c22899b7e7378545",
+      "replacements": 2
+    },
+    ".github/workflows/host-app-wake-receiving.yml": {
+      "after": "b5b58104dedb47a98b8bd3eef64ffeb0a9f2a9eec4a22f604c7bafd251bcc843",
+      "before": "e84e48af21685efe2f7c01282b7fa73061bc1d5c9725831ca58d8fe5fc4de0e8",
+      "replacements": 1
+    },
+    ".github/workflows/host-app-wake-source.yml": {
+      "after": "bbdc3b4b89e355e47d268f6bf1c36a710562184dbdf764518c607c4c5a68fd1b",
+      "before": "c4e9a969fd746d5c88e6ebca9f402c725f88a5365fae3cdeeeb36815e5565a0b",
+      "replacements": 1
+    },
+    ".github/workflows/installation-principal-data.yml": {
+      "after": "d72ed71fdac862494130c3265dff68650db57407d24660e06dbe2dc710a639ab",
+      "before": "fd13fb6ef79b7d0ba6dc63ba248d900853a3fed0eff4038c460509419272d543",
+      "replacements": 1
+    },
+    ".github/workflows/installation-registry-transactions.yml": {
+      "after": "301b51fcb39d5a8a11b2b8a4eba78f3816b37efacb2fef8403825cf130cd5f3e",
+      "before": "4fd3db7199e4abeb885fb52e644356b639684057b386cacd6176e523cea3a320",
+      "replacements": 1
+    },
+    ".github/workflows/native-proof-data-journal.yml": {
+      "after": "598caa7e6d1083f2f794dea058275e38516fe94187cef415f7b8935b6aeb2f09",
+      "before": "bc8d8494c8d753a8d394543b27a1a42c588c4aa95a91db00ebf0b9dacaf6b034",
+      "replacements": 1
+    },
+    ".github/workflows/native-proof-transcript.yml": {
+      "after": "b29a9e065be9605aa3ea827b670ff8345cc899eea1cba9d34c14f87abe76783e",
+      "before": "5c4390b17ed22f4a4d64811219e5923fae9f866136ee84cdc7d21d2c44bf966b",
+      "replacements": 1
+    },
+    ".github/workflows/post-merge-release-evidence.yml": {
+      "after": "a1f5747a008a1fd3d662ec89958cce38c1f3819f4e325cfc80a1c2142eeeeec6",
+      "before": "09f29a1f876bfd519c189c15af8dc5841e52464046facd182f3539009cbbed09",
+      "replacements": 1
+    },
+    ".github/workflows/principal-possession-data.yml": {
+      "after": "2244bda80be5b2851cdeede0f1a4767447a9a4eece3a7620616135b9213dadfb",
+      "before": "51afc78647279b127a858c36fd281ac1741be97cef48c62b635f4f99eb7a3dc0",
+      "replacements": 1
+    },
+    ".github/workflows/push-coordinator-source.yml": {
+      "after": "27fa53d49a1b92f3d8bbd850b257df4afebc7bd5ac712224e6a3afe5e3b513fb",
+      "before": "9ade53b48ef52f65b56838aa6852db3487f1252b8176ba319b39e9d2162f2ec8",
+      "replacements": 1
+    },
+    ".github/workflows/reusable-workflow-guard.yml": {
+      "after": "180d851fbe70feeed9fcd6543ec215de5b487dfea68b21a457b41b8a86cad267",
+      "before": "9d114b39b328477546712d7438d6860c624a66dba803574ae201915b6659ccdc",
+      "replacements": 1
+    },
+    ".github/workflows/rich-delivery-adapter.yml": {
+      "after": "92df2e92edb1e222ad447d1449b7bd076be8e12ad47010206f409c42e86ccffe",
+      "before": "ba1b23cb6ea269bf6c335865b0ccb61c64bf6cab9e871342c9e826728ab4f9b9",
+      "replacements": 1
+    },
+    ".github/workflows/rich-session-data-profile.yml": {
+      "after": "adfcc32b931999261299b5b6f038ebc166fa5b4c2781dc0e1c1ca79f07081718",
+      "before": "c2343f7e6a28b79b2c7b1526e4187aadccc9f59abe1a0862bff61c54a66951b3",
+      "replacements": 1
+    },
+    ".github/workflows/semgrep.yml": {
+      "after": "36f4312e1a2256597048060cfea3cee4d8f25213dc560c2d8b5cc77018d60f7f",
+      "before": "1d6d29f50853957f48000d81f5090cc2ddcd1db95ebf123b17ee5bd9a81841c3",
+      "replacements": 2
+    },
+    ".github/workflows/surface-enrollment-source.yml": {
+      "after": "053eeba6766dc90fb6028f8ef56882d160591ea6c96787102c4efc9f5b9d3364",
+      "before": "57c2b0e9d07358ede7c02447eb9547fe3f9ae0cd09be3b3296900a409173285a",
+      "replacements": 1
+    },
+    ".github/workflows/trusted-delivery.yml": {
+      "after": "a0141d9c1c1b2a6bf70d3beef51716a9903f2aa1734dc427c9b9038ef6668c2d",
+      "before": "5e1080c7c8698d6f425d0a29e9697da4cc9715b6241ee0e10ecaeaa753cd20f7",
+      "replacements": 1
+    },
+    ".github/workflows/watch-moment-alert-source.yml": {
+      "after": "da7f08d284fa8c9d24134f4aa00bc7d962406105f41551bc752064dfda79f007",
+      "before": "0c9b2da7ef6b69162766068fa72e1cfa9bb7fe8a392a7a54d0fa3bae727a6ead",
+      "replacements": 1
+    },
+    ".github/workflows/widget-first-key-source.yml": {
+      "after": "e31e922a7fecd5b68c045364ccd6dc7d8b788f954e9bb0ec19b2a1ba510d4c9c",
+      "before": "1d97bccbe04aeaceb2fc6cae0310a5fe85e45acd7783eabfdb71f5613b09e162",
+      "replacements": 1
+    },
+    ".github/workflows/worker-do-registry-source.yml": {
+      "after": "b92235c93ff1a277d35800f2cc6637c2d8f88e230bed2656cc9b711d60d2eea2",
+      "before": "1dd9804009649428212779f6d420192e2d6c8e21e65c19d1c453cf81dd065896",
+      "replacements": 1
+    }
+  }
+}
