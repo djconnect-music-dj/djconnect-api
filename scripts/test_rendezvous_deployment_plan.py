@@ -161,6 +161,8 @@ class PreparationTests(unittest.TestCase):
             pinned.update({name: change['after'] for name, change in {**delta41['workflow_changes'], **delta41['version_source_changes']}.items()})
             manifest41 = json.loads((canonical / v.API_41_MANIFEST_DELTA_PATH).read_bytes())
             pinned.update({name: change['after'] for name, change in manifest41['manifest_changes'].items()})
+            canonical_delta = v.canonical_pin_delta()
+            pinned.update({name: change['after'] for name, change in {**canonical_delta['workflow_changes'], **canonical_delta['manifest_changes']}.items()})
             for path in additions:
                 raw = (canonical / path).read_bytes()
                 expected = pinned[path]
