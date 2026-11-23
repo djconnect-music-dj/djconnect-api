@@ -2,7 +2,8 @@ import { base64Encode, base64Url } from "../crypto";
 import { findInstallTokenByBearer } from "../repositories/installTokens";
 import { canonical, need, parseStrictJson, SurfaceError } from "../surface-push/wire";
 import {
-	firstKeyAudience, firstKeyRegisterBytes, firstKeyStatusBytes,
+	firstKeyAudience, installationFirstKeyAudience, firstKeyRegisterBytes, firstKeyStatusBytes,
+	type FirstKeyAudience,
 	type FirstKeyChallenge, type FirstKeyPairBinding, type FirstKeyStatusChallenge,
 } from "./first-key-wire";
 
@@ -31,7 +32,7 @@ type Json = Record<string, unknown>;
 type Credential = NonNullable<Awaited<ReturnType<typeof findInstallTokenByBearer>>>;
 interface Original extends FirstKeyPairBinding { contract_version: 1; operation_id: string }
 interface Currentness extends Original {
-	api_audience: typeof firstKeyAudience;
+	api_audience: FirstKeyAudience;
 	action: typeof routes[number];
 	install_credential_id: string;
 	decision_id: string;
@@ -44,7 +45,7 @@ export type CoreCurrentnessAuthority = (request: Request, decision: Readonly<Cur
 type CheckCurrentness = (original: Original, operationExpiry: number | null, nonceExpiry?: number) => Promise<number>;
 interface PairSqlGuard { sql: string; values: readonly (string | number)[] }
 interface Retirement extends Original {
-	api_audience: typeof firstKeyAudience;
+	api_audience: FirstKeyAudience;
 	event_id: string;
 	install_credential_id: string;
 	request_expires_at_ms: number;
@@ -149,7 +150,10 @@ function json(body: unknown, status = 200) {
 /** Candidate for a private ingress. Authorization must resolve the exact historical
  * pairing from a separately authenticated Core identity, including after token rotation. */
 export function createWidgetFirstKeyRetirementHandler(db: D1Database, origin: string,
-	authorize: (event: Readonly<Retirement>) => PairSqlGuard | null) {
+	authorize: (event: Readonly<Retirement>) => PairSqlGuard | null, scope: "ha-dev" | "installation" = "ha-dev") {
+    const production = scope === "installation";
+    const audience = production ? installationFirstKeyAudience : firstKeyAudience;
+    const retirementTable = production ? "native_installation_key_retirements" : "widget_first_key_retirements";
 	return async (request: Request) => {
 		try {
 			need(request.method === "POST" && request.url === origin + prefix + "retire",
@@ -157,7 +161,7 @@ export function createWidgetFirstKeyRetirementHandler(db: D1Database, origin: st
 			const input = await readFirstKeyBody(request, 4096, true);
 			fields(input, ["contract_version", "api_audience", "event_id", "operation_id", "install_credential_id",
 				"request_expires_at_ms", ...bindingFields]);
-			need(input.contract_version === 1 && input.api_audience === firstKeyAudience &&
+			need(input.contract_version === 1 && input.api_audience === audience &&
 				id(input.operation_id) && input.event_id === input.operation_id && id(input.install_credential_id) &&
 				id(input.pairing_generation) && bindingFields.slice(1).every(key => hexDigest(input[key])) &&
 				typeof input.request_expires_at_ms === "number" && Number.isSafeInteger(input.request_expires_at_ms) &&
@@ -167,13 +171,13 @@ export function createWidgetFirstKeyRetirementHandler(db: D1Database, origin: st
 			need(!request.signal.aborted, "widget_first_key_conflict", 409);
 			const guard = authorize(event);
 			need(guard, "widget_first_key_proof_rejected", 403);
-			const retired = await db.prepare(`INSERT INTO widget_first_key_retirements (pair_binding)
-				SELECT ? WHERE ${guard.sql}
-				ON CONFLICT(pair_binding) DO UPDATE SET pair_binding = excluded.pair_binding
-				RETURNING pair_binding`).bind(event.pair_binding, ...guard.values).first();
+			const retired = await db.prepare(`INSERT INTO ${retirementTable} (${production ? "credential_id," : ""}pair_binding)
+				SELECT ${production ? "?," : ""}? WHERE ${guard.sql}
+				ON CONFLICT(${production ? "credential_id," : ""}pair_binding) DO UPDATE SET pair_binding = excluded.pair_binding
+				RETURNING pair_binding`).bind(...(production ? [event.install_credential_id] : []), event.pair_binding, ...guard.values).first();
 			need(retired, "widget_first_key_proof_rejected", 403);
 			return new Response(canonical({
-				contract_version: 1, api_audience: firstKeyAudience, event_id: event.event_id,
+				contract_version: 1, api_audience: audience, event_id: event.event_id,
 				pair_binding: event.pair_binding, event_sha256: eventDigest, state: "retired",
 			}), { headers: { "content-type": "application/json", "cache-control": "no-store", "x-content-type-options": "nosniff" } });
 		} catch (error) {
@@ -184,23 +188,29 @@ export function createWidgetFirstKeyRetirementHandler(db: D1Database, origin: st
 }
 
 export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWorkerCurrent: () => boolean,
-	policy?: WidgetFirstKeyPolicy, authorizeCore?: CoreCurrentnessAuthority) {
+	policy?: WidgetFirstKeyPolicy, authorizeCore?: CoreCurrentnessAuthority, scope: "ha-dev" | "installation" = "ha-dev") {
+    const production = scope === "installation";
+    const audience = production ? installationFirstKeyAudience : firstKeyAudience;
+    const keysTable = production ? "native_installation_first_key" : "widget_first_key";
+    const retirementTable = production ? "native_installation_key_retirements" : "widget_first_key_retirements";
+    const decisionsTable = production ? "native_installation_key_decisions" : "widget_first_key_decisions";
+    const retirementValues = (credential: Credential, pair: string) => production ? [credential.id, pair] : [pair];
 	const policyId = policy?.id;
 	const policyExpiry = policy?.expiresAt;
 	const credentialGuard = `EXISTS (SELECT 1 FROM install_tokens WHERE id = ? AND token_hash = ? AND disabled = 0)`;
-	const pairGuard = `NOT EXISTS (SELECT 1 FROM widget_first_key_retirements WHERE pair_binding = ?)`;
+	const pairGuard = `NOT EXISTS (SELECT 1 FROM ${retirementTable} WHERE ${production ? "credential_id = ? AND " : ""}pair_binding = ?)`;
 	const credentialValues = (credential: Credential) => [credential.id, credential.token_hash] as const;
 	const activeRow = `credential_id = ? AND operation_id = ? AND policy_id = ? AND retired = 0
 		AND expires_at_ms > ? AND ${credentialGuard}
-		AND NOT EXISTS (SELECT 1 FROM widget_first_key_retirements
-			WHERE pair_binding = widget_first_key.pair_binding)`;
+		AND NOT EXISTS (SELECT 1 FROM ${retirementTable}
+			WHERE pair_binding = ${keysTable}.pair_binding ${production ? `AND credential_id = ${keysTable}.credential_id` : ""})`;
 	const activeValues = (credential: Credential, operation: string) =>
 		[credential.id, operation, policyId!, Date.now(), ...credentialValues(credential)] as const;
 	const unavailable = "widget_first_key_unavailable";
 	const conflict = "widget_first_key_conflict";
 
 	const checkWorker = () => {
-		need(policy && id(policyId) && Number.isSafeInteger(policyExpiry) &&
+		need(policy && (id(policyId) || production && policyId === "ios-native-push-development-40532/1") && Number.isSafeInteger(policyExpiry) &&
 			policy.id === policyId && policy.expiresAt === policyExpiry &&
 			Date.now() < policyExpiry! && isWorkerCurrent() && policy.isCurrent(), unavailable, 503);
 		return policy;
@@ -212,7 +222,7 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 	const pairSqlGuard = (credential: Credential, original: Original) =>
 		policy?.pairSqlGuard?.(credential.id, original) ?? { sql: "1", values: [] };
 	const load = (credential: Credential, operation: string, guard: PairSqlGuard = { sql: "1", values: [] }) =>
-		db.prepare(`SELECT * FROM widget_first_key WHERE ${activeRow} AND ${guard.sql}`)
+		db.prepare(`SELECT * FROM ${keysTable} WHERE ${activeRow} AND ${guard.sql}`)
 			.bind(...activeValues(credential, operation), ...guard.values).first<Saved>();
 
 	async function issueChallenge(input: unknown, credential: Credential, currentness: CheckCurrentness) {
@@ -224,18 +234,18 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 		const decisionExpiry = await currentness(original, null);
 		const guard = pairSqlGuard(credential, original);
 		const challenge: FirstKeyChallenge = {
-			contract_version: 1, api_audience: firstKeyAudience, operation_id: original.operation_id,
+			contract_version: 1, api_audience: audience, operation_id: original.operation_id,
 			api_installation_id: crypto.randomUUID(), install_credential_id: credential.id,
 			challenge_id: crypto.randomUUID(), challenge_nonce: nonce(),
 			expires_at_ms: Math.min(Date.now() + originalWindowMs, policyExpiry!), expected_key_revision: 0,
 		};
-		await db.prepare(`INSERT INTO widget_first_key
+		await db.prepare(`INSERT INTO ${keysTable}
 			(credential_id, operation_id, installation_id, policy_id, pair_binding, original_request, challenge, expires_at_ms)
 			SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE ${credentialGuard} AND ${pairGuard} AND ? > ${databaseNowMs} AND ${guard.sql}
 			ON CONFLICT(credential_id, operation_id) DO NOTHING`)
 			.bind(credential.id, original.operation_id, challenge.api_installation_id, policyId!,
 				original.pair_binding, canonical(original), canonical(challenge), challenge.expires_at_ms,
-				...credentialValues(credential), original.pair_binding, decisionExpiry, ...guard.values).run();
+				...credentialValues(credential), ...retirementValues(credential, original.pair_binding), decisionExpiry, ...guard.values).run();
 		const saved = await load(credential, original.operation_id, guard);
 		need(saved && saved.original_request === canonical(original) && !saved.receipt, conflict, 409);
 		return JSON.parse(saved.challenge) as FirstKeyChallenge;
@@ -249,7 +259,7 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 		const challenge = JSON.parse(saved.challenge) as FirstKeyChallenge;
 		need(equal(select(input, challengeFields), challenge) &&
 			equal(select(input, bindingFields), select(original as unknown as Json, bindingFields)), conflict, 409);
-		const bytes = firstKeyRegisterBytes(challenge, original);
+		const bytes = firstKeyRegisterBytes(challenge, original, audience);
 		const spki = decode64(input.core_public_key_spki_b64, 160);
 		need(hex(await digest(spki)) === original.core_key_thumbprint, "widget_first_key_proof_rejected", 403);
 		await verifyCore(bytes, spki, decode64(input.core_signature_b64url, 64, true));
@@ -270,11 +280,11 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 			registry_generation: crypto.randomUUID(), key_revision: 1, core_key_thumbprint: original.core_key_thumbprint,
 			transcript_sha256: hex(hash), expires_at_ms: challenge.expires_at_ms, state: "registered",
 		};
-		const result = await db.prepare(`UPDATE widget_first_key SET key_spki = ?, transcript_sha256 = ?, receipt = ?
+		const result = await db.prepare(`UPDATE ${keysTable} SET key_spki = ?, transcript_sha256 = ?, receipt = ?
 			WHERE ${activeRow} AND challenge = ? AND receipt IS NULL AND ? > ${databaseNowMs}
-			AND NOT EXISTS (SELECT 1 FROM widget_first_key WHERE pair_binding = ? AND receipt IS NOT NULL) AND ${guard.sql}
+			AND NOT EXISTS (SELECT 1 FROM ${keysTable} WHERE ${production ? "credential_id = ? AND " : ""}pair_binding = ? AND receipt IS NOT NULL) AND ${guard.sql}
 			RETURNING receipt`).bind(input.core_public_key_spki_b64, receipt.transcript_sha256, canonical(receipt),
-			...activeValues(credential, original.operation_id), saved.challenge, decisionExpiry, original.pair_binding,
+			...activeValues(credential, original.operation_id), saved.challenge, decisionExpiry, ...(production ? [credential.id] : []), original.pair_binding,
 			...guard.values).first<{ receipt: string }>();
 		need(result, conflict, 409);
 		return JSON.parse(result.receipt) as typeof receipt;
@@ -298,7 +308,7 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 		const guard = pairSqlGuard(credential, original);
 		const now = Date.now();
 		const newNonce = nonce(), newId = crypto.randomUUID(), expires = Math.min(now + statusWindowMs, saved.expires_at_ms);
-		const issued = await db.prepare(`UPDATE widget_first_key SET status_nonce = ?, status_nonce_id = ?, status_expires_at_ms = ?
+		const issued = await db.prepare(`UPDATE ${keysTable} SET status_nonce = ?, status_nonce_id = ?, status_expires_at_ms = ?
 			WHERE ${activeRow} AND receipt = ? AND (status_nonce_id IS NULL OR status_expires_at_ms <= ?) AND ? > ${databaseNowMs}
 			AND ${guard.sql}
 			RETURNING status_nonce, status_nonce_id, status_expires_at_ms`)
@@ -307,7 +317,7 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 		const outstanding = issued ?? await load(credential, query.operation_id, guard);
 		need(outstanding?.status_nonce && outstanding.status_nonce_id &&
 			outstanding.status_expires_at_ms && outstanding.status_expires_at_ms > Date.now(), conflict, 409);
-		return { ...query, api_audience: firstKeyAudience, install_credential_id: credential.id,
+		return { ...query, api_audience: audience, install_credential_id: credential.id,
 			pairing_generation: original.pairing_generation, core_key_thumbprint: original.core_key_thumbprint,
 			expires_at_ms: saved.expires_at_ms, status_nonce_id: outstanding.status_nonce_id,
 			status_nonce: outstanding.status_nonce, status_nonce_expires_at_ms: outstanding.status_expires_at_ms };
@@ -324,16 +334,16 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 			saved.status_expires_at_ms && saved.status_expires_at_ms > Date.now(), conflict, 409);
 		const expected: FirstKeyStatusChallenge = { contract_version: 1, operation_id: query.operation_id,
 			api_installation_id: query.api_installation_id, transcript_sha256: query.transcript_sha256,
-			api_audience: firstKeyAudience, install_credential_id: credential.id,
+			api_audience: audience, install_credential_id: credential.id,
 			pairing_generation: original.pairing_generation, core_key_thumbprint: original.core_key_thumbprint,
 			expires_at_ms: saved.expires_at_ms, status_nonce_id: saved.status_nonce_id,
 			status_nonce: saved.status_nonce, status_nonce_expires_at_ms: saved.status_expires_at_ms };
 		need(equal(select(input, statusFields), expected), conflict, 409);
-		await verifyCore(firstKeyStatusBytes(expected), decode64(saved.key_spki, 160), decode64(input.core_signature_b64url, 64, true));
+		await verifyCore(firstKeyStatusBytes(expected, audience), decode64(saved.key_spki, 160), decode64(input.core_signature_b64url, 64, true));
 		await checkPair(credential, original);
 		const decisionExpiry = await currentness(original, saved.expires_at_ms, saved.status_expires_at_ms);
 		const guard = pairSqlGuard(credential, original);
-		const consumed = await db.prepare(`UPDATE widget_first_key
+		const consumed = await db.prepare(`UPDATE ${keysTable}
 			SET status_nonce = NULL, status_nonce_id = NULL, status_expires_at_ms = NULL
 			WHERE ${activeRow} AND receipt = ? AND status_nonce_id = ? AND status_expires_at_ms > ? AND ? > ${databaseNowMs}
 			AND ${guard.sql}
@@ -379,7 +389,7 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 				const decisionInput = parseStrictJson(header);
 				fields(decisionInput, ["contract_version", "api_audience", "action", "decision_id", "install_credential_id",
 					"operation_id", ...bindingFields, "request_sha256", "issued_at_ms", "expires_at_ms", "operation_expires_at_ms"]);
-				need(canonical(decisionInput) === header && decisionInput.api_audience === firstKeyAudience &&
+				need(canonical(decisionInput) === header && decisionInput.api_audience === audience &&
 					decisionInput.action === route && id(decisionInput.decision_id) &&
 					decisionInput.install_credential_id === credential.id &&
 					Number.isSafeInteger(decisionInput.issued_at_ms) && Number.isSafeInteger(decisionInput.expires_at_ms),
@@ -404,9 +414,9 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 					checkFresh();
 					checkWorker();
 					if (!claimed) {
-						await db.prepare(`DELETE FROM widget_first_key_decisions WHERE rowid IN (
-							SELECT rowid FROM widget_first_key_decisions WHERE expires_at_ms <= ${databaseNowMs} LIMIT 32)`).run();
-						const claim = await db.prepare(`INSERT INTO widget_first_key_decisions (credential_id, decision_id, expires_at_ms)
+						await db.prepare(`DELETE FROM ${decisionsTable} WHERE rowid IN (
+							SELECT rowid FROM ${decisionsTable} WHERE expires_at_ms <= ${databaseNowMs} LIMIT 32)`).run();
+						const claim = await db.prepare(`INSERT INTO ${decisionsTable} (credential_id, decision_id, expires_at_ms)
 							SELECT ?, ?, ? WHERE ? > ${databaseNowMs}
 							ON CONFLICT(credential_id, decision_id) DO NOTHING RETURNING decision_id`)
 							.bind(credential.id, decision.decision_id, decision.expires_at_ms, decision.expires_at_ms).first();
