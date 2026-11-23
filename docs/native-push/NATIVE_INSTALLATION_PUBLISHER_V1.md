@@ -145,3 +145,30 @@ retains the same actual signer, pair, loaded credential and consent, with its
 own original role expiry/clock mapping. The old first-key witness is consumed,
 not extended. No raw signer, caller JSON constructor or restored status creates
 role custody. Actual v4 read/v3 native-clock qualification remains separate.
+
+## Live provenance after issuance
+
+The initial selected Widget target is platform `ios`, app
+`dev.djconnect.ios`, extension `dev.djconnect.ios.track-insight-widget`, kind
+`DJConnectSessionWidget`; small/medium/large share that same kind. It is not a
+Watch or Live Activity target. The original selected signed iOS build remains
+40532 until a separately qualified policy selects a new actual signed build.
+
+Every production delegation retains its authenticated credential ID/hash,
+original native registry receipt, pair publication and consent revision. Live
+lookups and same-statement commit authorization for issuer issue, capability
+registration and provider dispatch must retain that provenance. Native pair
+retirement, credential revocation/rotation and a covering consent withdrawal
+close already issued delegations/capabilities, not merely subsequent enrolment.
+Core v4 reads retain their own actual role/source/clock fences. No old operator
+row is eligible through this production composition. Initial key challenge
+expiry is not reused as the role lifetime; the original accepted role grant is
+its own bound after the genuine winning transition.
+
+After successful production enrolment, the existing signed Surface issuer
+challenge/issue/status/withdraw wire and existing Surface registration,
+status/revoke/event wire remain unchanged. Production composition admits only
+records linked to genuine native-installation delegation provenance. Negative
+status/withdraw/revoke retain their original scoped semantics after retirement;
+they cannot mint a fresh role or provider effect. The generic surface compiled
+closed gate, existing operator paths and activity-profile gates are unchanged.
