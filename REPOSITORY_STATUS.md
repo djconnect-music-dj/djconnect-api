@@ -1,61 +1,15 @@
-# DJConnect Repository Status
+# API Repository Status
 
-Status: Active engineering repository
+Repository: `djconnect-music-dj/djconnect-api` (ID `1275206655`). Owns the API Worker, D1, trust and relay boundary; Core owns product authority and Apple owns native rendering.
 
-## Repository
+## Reconciled predecessor
 
-`djconnect-music-dj/djconnect-api`
+[API #276](https://github.com/djconnect-music-dj/djconnect-api/pull/276) merged at `41059bd7357fcf0a0f8676065cf90d902504a235`. Its source tree equals reviewed candidate `fba1cd13cb8b0b569b4d9e840222f91eefa7cbeb` (tree `58d3861c4c4846e4af77f8175e411b4f86686e13`). This separate governance increment reconciles that implementation; it does not authorize deployment or native activation.
 
-## Role
+## Execution Horizon
 
-central API trust/relay boundary, APNs relay, per-install token bootstrap and future entitlement/profile-cloud surfaces.
+1. Requalify the existing guest-boundary PR #275 against reconciled main; no merge approval is assumed.
+2. Review the separate native Watch adoption branch and preserve its independent channel scopes.
+3. Join genuine paired-device consent, issuer custody and background-read authority before any native push activation.
 
-## Ownership
-
-Owns: central API implementation, Cloudflare Worker runtime, APNs relay, per-install token bootstrap and API-owned localized display-message mapping.
-
-Does not own: local-first Community runtime behavior, Home Assistant integration implementation, native client UX or canonical foundation docs.
-
-## Current Phase
-
-RG-API-001: Version 2.2 governance adoption. Documentation only.
-
-## Status
-
-Governance adoption in progress.
-
-## Blocking Dependencies
-
-- Cross-repository completion depends on all active DJConnect repositories being
-  aligned and reviewed.
-- Pull request creation requires network/GitHub access and maintainer approval
-  from the local environment.
-
-## Current Prompt
-
-API governance adoption
-
-## Completion Report
-
-Local governance branch and immutable Prompt History.
-
-## Last Qualification
-
-No repository-local verification qualification was executed for this
-documentation-only bootstrap alignment pass.
-
-## Validated Base SHA
-
-`7a1fca036b600a4224091343fedf188919d31b2b`
-
-This value records the repository SHA inspected at the start of the
-repository-local bootstrap alignment pass.
-
-## Repository-Local Next Action
-
-Review and merge the repository-local bootstrap alignment branch, then keep
-future work scoped to this repository's ownership boundary.
-
-## Notes
-
-Cloudflare/API/security rules remain in AGENTS.md and are authoritative for API-specific work.
+Source delivery, internal evidence publication, deployment and device acceptance are separate. Production remains API4.1.0 at `0c298a9e3e11d8fc6aaada089b4096b3b4d9ecd9`; surface push remains unavailable. No provider keys or native authority are created here.
