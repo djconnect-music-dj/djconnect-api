@@ -207,3 +207,88 @@ it("shipping dispatcher mounts only authenticated own publication and preserves 
   expect(await db.prepare("SELECT count(*) AS n FROM native_installation_first_key WHERE receipt IS NOT NULL").first("n")).toBe(0);
  } finally { external.mockRestore(); }
 });
+
+it("64 genuinely closed publication histories do not exhaust new bounded active slots", async () => {
+ const { createInstallationFirstKey } = await import("../src/native-push/installation-first-key");
+ const { installationNativePolicy } = await import("../src/native-push/installation-policy");
+ const retire = createInstallationFirstKey(db, origin, () => true, installationNativePolicy);
+ for (let index = 0; index < 64; index++) {
+  const item = { ...publication(), operation_id: "closed-" + index,
+   pair_binding: (index + 1).toString(16).padStart(64, "0") };
+  expect((await handler()(request("publisher/operation", item))).status).toBe(200);
+  expect((await handler()(request("publisher/withdraw", { contract_version: 1,
+   pair_binding: item.pair_binding, consent_revision: item.consent_revision }))).status).toBe(200);
+  const { consent_revision: _revision, ...original } = item;
+  const event = { ...original, api_audience: "djc-native-push/1", event_id: item.operation_id };
+  expect((await retire(new Request(origin + "/v1/push/native/key/retire", { method: "POST",
+   headers: { "content-type": "application/json", authorization: "Bearer " + a.token }, body: canonical(event) }))).status).toBe(200);
+ }
+ expect(await db.prepare("SELECT count(*) AS n FROM native_installation_pair_publications").first("n")).toBe(64);
+ expect((await handler()(request("publisher/operation", { ...publication(), operation_id: "new-original",
+  pair_binding: "f".repeat(64) }))).status).toBe(200);
+ expect(await db.prepare("SELECT count(*) AS n FROM native_installation_pair_publications").first("n")).toBe(65);
+});
+
+it("negative exact retirement remains possible after positive signed-app policy expiry", async () => {
+ const { createInstallationFirstKey } = await import("../src/native-push/installation-first-key");
+ const { installationNativePolicy } = await import("../src/native-push/installation-policy");
+ const item = publication();
+ expect((await handler()(request("publisher/operation", item))).status).toBe(200);
+ const { consent_revision: _revision, ...original } = item;
+ const event = { ...original, api_audience: "djc-native-push/1", event_id: item.operation_id };
+ const dispatch = createInstallationFirstKey(db, origin, () => true, { ...installationNativePolicy, expiresAt: 1 });
+ const negative = () => new Request(origin + "/v1/push/native/key/retire", { method: "POST",
+  headers: { "content-type": "application/json", authorization: "Bearer " + a.token }, body: canonical(event) });
+ expect((await dispatch(negative())).status).toBe(200);
+ const positive = new Request(origin + "/v1/push/native/key/challenge", { method: "POST",
+  headers: { "content-type": "application/json", authorization: "Bearer " + a.token }, body: "{}" });
+ expect((await dispatch(positive)).status).toBe(503);
+ await db.prepare("UPDATE install_tokens SET disabled=1 WHERE id=?").bind(a.id).run();
+ expect((await dispatch(negative())).status).toBe(401);
+});
+
+it("an own missing publication can be closed without fabricating a positive source or accepting mismatched existing data", async () => {
+ const { createInstallationFirstKey } = await import("../src/native-push/installation-first-key");
+ const absent = { ...publication(), operation_id: "unknown-original" };
+ const { consent_revision: _revision, ...original } = absent;
+ const event = { ...original, api_audience: "djc-native-push/1", event_id: absent.operation_id };
+ const dispatch = createInstallationFirstKey(db, origin, () => true); // Negative needs no positive policy.
+ const retire = (body: unknown, token = a.token) => dispatch(new Request(origin + "/v1/push/native/key/retire", {
+  method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + token }, body: canonical(body) }));
+ expect((await retire(event, b.token)).status).toBe(403);
+ expect((await retire(event)).status).toBe(200);
+ expect((await handler()(request("publisher/operation", absent))).status).toBe(409);
+ expect(await db.prepare("SELECT count(*) AS n FROM native_installation_first_key WHERE receipt IS NOT NULL").first("n")).toBe(0);
+ const known = { ...publication(), operation_id: "known-original", pair_binding: "e".repeat(64) };
+ expect((await handler()(request("publisher/operation", known))).status).toBe(200);
+ const { consent_revision: _knownRevision, ...knownOriginal } = known;
+ expect((await retire({ ...knownOriginal, api_audience: "djc-native-push/1", event_id: known.operation_id,
+  owner_binding: "0".repeat(64) })).status).toBe(403);
+ expect(await db.prepare("SELECT count(*) AS n FROM native_installation_key_retirements WHERE pair_binding=?")
+  .bind(known.pair_binding).first("n")).toBe(0);
+});
+
+
+it("off-only releases active publication slots without deleting evidence; retired-only stays positively closed", async () => {
+ const { createInstallationFirstKey } = await import("../src/native-push/installation-first-key");
+ const retire = createInstallationFirstKey(db, origin, () => true);
+ for (let index = 0; index < 65; index++) {
+  const item = { ...publication(), operation_id: "off-only-" + index,
+   pair_binding: (index + 100).toString(16).padStart(64, "0") };
+  expect((await handler()(request("publisher/operation", item))).status).toBe(200);
+  expect((await handler()(request("publisher/withdraw", { contract_version: 1,
+   pair_binding: item.pair_binding, consent_revision: item.consent_revision }))).status).toBe(200);
+ }
+ expect(await db.prepare("SELECT count(*) AS n FROM native_installation_pair_publications").first("n")).toBe(65);
+ expect(await db.prepare("SELECT count(*) AS n FROM native_installation_key_retirements").first("n")).toBe(0);
+ const retired = { ...publication(), operation_id: "retired-only", pair_binding: "d".repeat(64) };
+ expect((await handler()(request("publisher/operation", retired))).status).toBe(200);
+ const { consent_revision: _revision, ...original } = retired;
+ const event = { ...original, api_audience: "djc-native-push/1", event_id: retired.operation_id };
+ expect((await retire(new Request(origin + "/v1/push/native/key/retire", { method: "POST", headers: {
+  "content-type": "application/json", authorization: "Bearer " + a.token }, body: canonical(event) }))).status).toBe(200);
+ expect((await handler()(request("publisher/operation", { ...retired, operation_id: "late-retired-retry",
+  consent_revision: 2 }))).status).toBe(409);
+ expect(await db.prepare("SELECT count(*) AS n FROM native_installation_consent_withdrawals WHERE pair_binding=?")
+  .bind(retired.pair_binding).first("n")).toBe(0);
+});

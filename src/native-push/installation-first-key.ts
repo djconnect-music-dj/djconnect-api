@@ -21,6 +21,25 @@ export function createInstallationFirstKey(db: D1Database, origin: string, curre
  selected?: Readonly<SelectedApplePolicy>) {
  return async (request: Request) => {
   try {
+   const retiring = new URL(request.url).pathname === "/v1/push/native/key/retire";
+   if (retiring) {
+    // Closing an exact historical original is independent of positive signed-app
+    // policy expiry. Credential and original publication checks remain mandatory.
+    const credential = await authenticateInstallation(request, db, current);
+    return await createWidgetFirstKeyRetirementHandler(db, origin, event => {
+     if (!current() || request.signal.aborted || event.install_credential_id !== credential.id) return null;
+     return { sql: `EXISTS(SELECT 1 FROM install_tokens i
+       WHERE i.id=? AND i.token_hash=? AND i.ha_install_id=? AND i.disabled=0)
+       AND (NOT EXISTS(SELECT 1 FROM native_installation_pair_publications p WHERE p.credential_id=? AND p.operation_id=?)
+       OR EXISTS(SELECT 1 FROM native_installation_pair_publications p
+        WHERE p.credential_id=? AND p.operation_id=? AND p.pairing_generation=? AND p.pair_binding=?
+        AND p.owner_binding=? AND p.device_binding=? AND p.core_key_thumbprint=? AND p.request_expires_at_ms=?))`,
+      values: [credential.id, credential.token_hash, credential.ha_install_id,
+       credential.id, event.operation_id, credential.id, event.operation_id,
+       event.pairing_generation, event.pair_binding, event.owner_binding, event.device_binding,
+       event.core_key_thumbprint, event.request_expires_at_ms] };
+    }, "installation")(request);
+   }
    if (!selected || selected.id !== "ios-native-push-development-40532/1" ||
        !Number.isSafeInteger(selected.expiresAt) || Date.now() >= selected.expiresAt || !current())
     throw new SurfaceError(503, "native_first_key_policy_unavailable");
@@ -56,11 +75,6 @@ export function createInstallationFirstKey(db: D1Database, origin: string, curre
     },
     verifyApple: createWidgetFirstKeyAppleVerifier(selected.apple),
    };
-   if (new URL(request.url).pathname === "/v1/push/native/key/retire") {
-    return await createWidgetFirstKeyRetirementHandler(db, origin, event =>
-     live() && event.install_credential_id === credential.id ? query(event, event.request_expires_at_ms) : null,
-     "installation")(request);
-   }
    return await createWidgetFirstKeyHandler(db, origin, live, policy, async (_request, decision) => {
     if (!live() || decision.install_credential_id !== credential.id) return false;
     const guard = query(decision);

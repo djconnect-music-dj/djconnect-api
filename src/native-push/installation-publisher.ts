@@ -63,11 +63,9 @@ export function createInstallationPublisher(db: D1Database, origin: string, curr
 			if (action === "publisher/withdraw") {
 				result = await db.prepare(`INSERT INTO native_installation_consent_withdrawals
 					(credential_id,pair_binding,through_revision) SELECT ?,?,? WHERE ${credentialSQL}
-                    AND ((SELECT count(*) FROM native_installation_consent_withdrawals WHERE credential_id=?) < 64
-                      OR EXISTS (SELECT 1 FROM native_installation_consent_withdrawals WHERE credential_id=? AND pair_binding=?))
 					ON CONFLICT(credential_id,pair_binding) DO UPDATE SET through_revision=MAX(through_revision,excluded.through_revision)
 					RETURNING through_revision`).bind(credential.id, input.pair_binding, input.consent_revision,
-					...values(credential), credential.id, credential.id, input.pair_binding).first();
+					...values(credential)).first();
 			} else {
 				need(input.install_credential_id === credential.id && valid(input.operation_id, identifier) &&
 					valid(input.pairing_generation, identifier) && ["owner_binding", "device_binding", "core_key_thumbprint"]
@@ -80,7 +78,12 @@ export function createInstallationPublisher(db: D1Database, origin: string, curr
 					AND NOT EXISTS (SELECT 1 FROM native_installation_consent_withdrawals
 						WHERE credential_id=? AND pair_binding=? AND through_revision>=?)
 					AND NOT EXISTS (SELECT 1 FROM native_installation_key_retirements WHERE credential_id=? AND pair_binding=?)
-					AND ((SELECT count(*) FROM native_installation_pair_publications WHERE credential_id=?) < 64
+					AND ((SELECT count(*) FROM native_installation_pair_publications pending WHERE pending.credential_id=?
+                        AND NOT EXISTS(SELECT 1 FROM native_installation_key_retirements r
+                          WHERE r.credential_id=pending.credential_id AND r.pair_binding=pending.pair_binding)
+                        AND NOT EXISTS(SELECT 1 FROM native_installation_consent_withdrawals w
+                          WHERE w.credential_id=pending.credential_id AND w.pair_binding=pending.pair_binding
+                            AND w.through_revision>=pending.consent_revision)) < 64
 						OR EXISTS (SELECT 1 FROM native_installation_pair_publications WHERE credential_id=? AND operation_id=?))
 					ON CONFLICT(credential_id,operation_id) DO UPDATE SET operation_id=excluded.operation_id
 					WHERE pairing_generation=excluded.pairing_generation AND pair_binding=excluded.pair_binding
