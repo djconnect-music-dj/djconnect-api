@@ -73,3 +73,26 @@ A later build requires an independently selected new policy, never a wildcard.
 All shorter original source, request and channel expiries remain bounded by
 minimum; the policy window does not renew them. This is configuration selection,
 not native/provider or physical acceptance.
+
+## Original pair partition and negative custody
+
+The platform owner selected private key partitions derived from the actual
+origin, installation ID and **original committed PairJournal registration
+binding**. Only that actual current journal object supplies the binding; no
+request field selects a partition. Each genuine ordinary device pair has its
+own key custody. This is not an installation-global signing key shared between
+credentials. Rotation within the same original pair still mismatches its
+original custody and never generates a replacement automatically. A fresh pair
+requires its own genuinely committed pairing and explicit new channel opt-in.
+
+After a genuine own-publication ACK, Core commits and reads back private atomic
+negative-only credential custody before returning any native key challenge.
+The existing original SQLite pair-retirement journal may use that exact
+publication/credential to withdraw or retire after unpair or restart. This is
+necessary when the original ConfigEntry has been removed. This private record
+never supplies the positive enrollment path, an original pair, a registered-key
+winner, a native clock or a Widget permission. Other pair/operation/field
+combinations are denied. Revoked or rotated credentials remain denied by the
+server's original ID/hash check; no replacement principal is adopted. The
+negative writer retains its lock through an actual pending atomic write even
+if the requesting task is cancelled. Private tokens are never exported.
