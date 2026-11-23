@@ -203,8 +203,11 @@ principal may set its own covering pair tombstone when that operation has no
 publication row. If a row exists, all original fields must match. A permanent
 retired pair remains closed to later positive publication, first trust and
 roles. Negative closure is independent of positive signed-app-policy expiry.
-The active-publication budget excludes history only after both authenticated
-withdrawal and retirement decisions; original history is retained unchanged.
+The API budget counts at most 64 still positively admissible publications.
+An authenticated covering withdrawal OR permanent own pair retirement excludes
+that publication from the active budget; original history and all irreversible
+positive fences remain unchanged. Negative closure is never blocked by that
+positive-operation budget. This does not authorize private credential pruning.
 
 Private custody is pruned only when **all** matching actual SQL originals and
 all retained operation references have their exact genuine withdrawal and
