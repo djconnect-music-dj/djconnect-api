@@ -111,9 +111,10 @@ it("production native first trust uses selected signed policy and rejects malfor
  const { installationFirstKeyAudience, firstKeyRegisterBytes } = await import("../src/native-push/first-key-wire");
  const { sha256Hex, base64Encode, base64Url } = await import("../src/crypto");
  const { vi } = await import("vitest");
- const key = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
- const spki = await crypto.subtle.exportKey("spki", key.publicKey);
- const published = { ...publication(), core_key_thumbprint: await sha256Hex(spki) };
+ const key = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]) as CryptoKeyPair;
+ const spki = await crypto.subtle.exportKey("spki", key.publicKey) as ArrayBuffer;
+ const published = { ...publication(), core_key_thumbprint: Array.from(
+  new Uint8Array(await crypto.subtle.digest("SHA-256", spki)), value => value.toString(16).padStart(2, "0")).join("") };
  expect((await handler()(request("publisher/operation", published))).status).toBe(200);
  const original = { contract_version: 1 as const, operation_id: published.operation_id,
   pairing_generation: published.pairing_generation, pair_binding: published.pair_binding,
@@ -144,6 +145,9 @@ it("production native first trust uses selected signed policy and rejects malfor
  try {
   const rejected = await dispatch(await send("register", registration, challenge.expires_at_ms));
   expect(rejected.status).toBe(403);
+  // The register decision is claimed only AFTER genuine Core P256 verification;
+  // this therefore reaches the real Apple verifier instead of a wrong key hash.
+  expect(await db.prepare("SELECT count(*) AS n FROM native_installation_key_decisions").first("n")).toBe(2);
   expect(await db.prepare("SELECT count(*) AS n FROM native_installation_first_key WHERE receipt IS NOT NULL").first("n")).toBe(0);
   expect(external).not.toHaveBeenCalled();
   const noPolicy = createInstallationFirstKey(db, origin, () => true);
