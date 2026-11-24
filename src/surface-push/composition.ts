@@ -14,6 +14,8 @@ export interface SurfaceServiceOptions {
     now?: () => number;
     fetcher?: typeof fetch;
     isCurrent?: () => boolean;
+    /** Negative-only mode; the separate native production router verifies provenance. */
+    nativeHistoricalNegative?: true;
 }
 export interface SurfaceService {
     matches(env: AppEnv): boolean;
@@ -21,7 +23,7 @@ export interface SurfaceService {
     close(): void;
 }
 export function createSurfaceService(options: SurfaceServiceOptions): SurfaceService {
-    const originalEnv = options.env, originalNow = options.now, originalFetch = options.fetcher, originalCurrent = options.isCurrent;
+    const originalEnv = options.env, originalNow = options.now, originalFetch = options.fetcher, originalCurrent = options.isCurrent, originalNegative = options.nativeHistoricalNegative;
     const env = Object.freeze(Object.fromEntries(fields.map(name => [name, originalEnv[name]]))) as unknown as AppEnv;
     const time = originalNow ?? Date.now, transport = originalFetch ?? fetch;
     let closed = false, highWater = 0, provider: SurfaceProvider | undefined;
@@ -29,7 +31,7 @@ export function createSurfaceService(options: SurfaceServiceOptions): SurfaceSer
     const active = () => {
         let valid = false;
         try { valid = !closed && options.env === originalEnv && options.now === originalNow &&
-            options.fetcher === originalFetch && options.isCurrent === originalCurrent &&
+            options.fetcher === originalFetch && options.isCurrent === originalCurrent && options.nativeHistoricalNegative === originalNegative &&
             (originalCurrent?.() ?? true) && !closed && same(originalEnv); } catch { valid = false; }
         if (!valid) closed = true; // Once observed retired, this service generation stays retired.
         return valid;
@@ -71,7 +73,7 @@ export function createSurfaceService(options: SurfaceServiceOptions): SurfaceSer
                 isCurrent: () => { guard(candidate); return true; } }) :
                 issuer ? createSurfaceIssuer({ env, now, admittedProfiles: [] }) :
                 createSurfacePushHandler({ db: env.DB, encryptionKey: env.APNS_TOKEN_ENCRYPTION_KEY,
-                    authorizeProvider, fetcher, now, activityProfiles: [] });
+                    authorizeProvider, fetcher, now, activityProfiles: [], nativeHistoricalNegative: originalNegative });
             const response = await handler(request);
             guard(candidate);
             need(!signal.aborted, "surface_operation_cancelled", 409);

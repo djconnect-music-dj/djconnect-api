@@ -11,6 +11,8 @@ export interface SurfaceOptions {
  authorizeProvider?: () => Promise<string>;
  fetcher?: typeof fetch;
  activityProfiles?: readonly ActivityProfile[];
+ /** Server composition only: native-linked historical tokens can only read/revoke. */
+ nativeHistoricalNegative?: true;
  now?: () => number;
 }
 const routes = new Map<string, OperationKind>(["register", "revoke", "event", "status"].map(kind => ["/v1/push/surface/" + kind, kind as OperationKind]));
@@ -56,7 +58,9 @@ export function createSurfacePushHandler(options: SurfaceOptions): (request: Req
    const url = new URL(request.url), kind = routes.get(url.pathname);
    need(request.method === "POST" && kind && !url.search && !url.hash, "surface_route_not_found", 404);
    need(!request.headers.has("origin") && !request.headers.has("cookie"), "surface_server_transport_required", 403);
-   const clock = now(), p = await store.authenticate(request.headers.get("authorization"), clock);
+   const clock = now();
+   const historical = options.nativeHistoricalNegative === true && (kind === "status" || kind === "revoke");
+   const p = await store.authenticate(request.headers.get("authorization"), clock, historical);
    const input = await readInput(request, kind, clock), id = await store.identity(p, input);
    const operationDeadline = operationCreated(input.operation_id) + 300000;
    const executionClock = () => { const value = now(); need(value < operationDeadline, "operation_expired", 409); return value; };
@@ -71,7 +75,7 @@ export function createSurfacePushHandler(options: SurfaceOptions): (request: Req
     const sealed = await seal(registration.apns_token, options.encryptionKey, aad(p, { id, generation: input.generation, revision: input.revision, expires_at: registration.expires_at_ms, target_json: canonical(registration.target) }));
     validateRegistration(p, registration, executionClock());
     await store.register(p, registration, id, hash, claim, executionClock(), sealed);
-   } else if (kind === "revoke") await store.revoke(p, input, id, hash, claim, executionClock());
+   } else if (kind === "revoke") await store.revoke(p, input, id, hash, claim, executionClock(), historical);
    else {
     const event = input as EventInput, row = await store.target(id);
     need(row && row.state === "active" && row.revision === input.revision && row.expires_at > clock, "surface_registration_not_current", 409);

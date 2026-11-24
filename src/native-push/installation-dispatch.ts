@@ -1,3 +1,4 @@
+import { createInstallationSurfaceEnrol, installationEnrolPath } from "./installation-surface-enrol";
 import type { AppEnv } from "../types";
 import { createInstallationPublisher, installationPrefix } from "./installation-publisher";
 import { createInstallationFirstKey } from "./installation-first-key";
@@ -15,6 +16,7 @@ export function dispatchNativeInstallationRequest(request: Request, env: unknown
  const selected = env as AppEnv;
  const db = selected.DB;
  const current = () => selected.DB === db;
+ if (path === installationEnrolPath) return createInstallationSurfaceEnrol(selected, current)(request);
  return installation ? createInstallationPublisher(db, origin, current)(request) :
   createInstallationFirstKey(db, origin, current, installationNativePolicy)(request);
 }
