@@ -271,3 +271,29 @@ role grant bounded by the actual original source/consent/native evidence/policy;
 no first-key nonce or existing role is extended. Unknown/replayed/status,
 reentrant credential rotation, opt-out, bad proof and stale counters cannot
 issue a new ACK, restore a consumed challenge or resurrect an old role.
+
+
+## Original production ACK key bounds — 24 November 2026
+
+The production `djc-native-push/1` registered receipt adds exactly
+`apple_evidence_expires_at_ms` and `apple_status_expires_at_ms`, both safe integer
+UTC milliseconds copied directly from the exact original verified
+`AppleEvidence.expires` and `AppleEvidence.statusExpiresAt`. The same atomic SQL
+winning register statement stores both fields in the original registered receipt
+and the corresponding native-key metadata columns. Unknown, replay, status, a
+caller field, a model boolean and a loaded key do not create these values. Status
+can return the unchanged original receipt, without granting a new role.
+
+All original receipt fields remain, including `expires_at_ms` as the original
+first-key challenge deadline. That deadline is not a native-key lifetime. The
+old HA-dev audience and its exact ACK shape remain unchanged. No 30-day key
+lifetime is inferred from the selected signed-build policy.
+
+Core retains both fields as DATA in the original sealed registered receipt.
+Before signing a new role policy, its genuine winning continuation selects
+`min(original_source_grant, actual_consent_bound, selected_policy_bound,
+apple_evidence_expires_at_ms, apple_status_expires_at_ms)` and requires the result
+to remain current. Core does not clamp a policy after it has been signed,
+relabel an old receipt, extend first-key nonce authority or mint permission from
+a status reply. These fields expose real server bounds; actual native-clock,
+source, consent and SDK target qualification remain separate requirements.

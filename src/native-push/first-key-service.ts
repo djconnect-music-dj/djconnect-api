@@ -283,16 +283,20 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 			install_credential_id: credential.id, pairing_generation: original.pairing_generation,
 			registry_generation: crypto.randomUUID(), key_revision: 1, core_key_thumbprint: original.core_key_thumbprint,
 			transcript_sha256: hex(hash), expires_at_ms: challenge.expires_at_ms, state: "registered",
+			...(production ? { apple_evidence_expires_at_ms: actualApple!.evidence_expires_at_ms,
+				apple_status_expires_at_ms: actualApple!.status_expires_at_ms } : {}),
 		};
 		const result = await db.prepare(`UPDATE ${keysTable} SET key_spki = ?, transcript_sha256 = ?, receipt = ?
             ${production ? ",apple_key_id_b64=?,apple_public_key_spki_b64=?,apple_assertion_policy_json=?,apple_evidence_expires_at_ms=?,apple_status_expires_at_ms=?,apple_counter=0" : ""}
 			WHERE ${activeRow} AND challenge = ? AND receipt IS NULL AND ? > ${databaseNowMs}
 			AND NOT EXISTS (SELECT 1 FROM ${keysTable} WHERE ${production ? "credential_id = ? AND " : ""}pair_binding = ? AND receipt IS NOT NULL) AND ${guard.sql}
+            ${production ? `AND ? > ${databaseNowMs} AND ? > ${databaseNowMs}` : ""}
 			RETURNING receipt`).bind(input.core_public_key_spki_b64, receipt.transcript_sha256, canonical(receipt),
             ...(production ? [actualApple!.key_id_b64, actualApple!.public_key_spki_b64, actualApple!.policy_json,
                 actualApple!.evidence_expires_at_ms, actualApple!.status_expires_at_ms] : []),
 			...activeValues(credential, original.operation_id), saved.challenge, decisionExpiry, ...(production ? [credential.id] : []), original.pair_binding,
-			...guard.values).first<{ receipt: string }>();
+			...guard.values, ...(production ? [actualApple!.evidence_expires_at_ms, actualApple!.status_expires_at_ms] : []))
+            .first<{ receipt: string }>();
 		need(result, conflict, 409);
 		return JSON.parse(result.receipt) as typeof receipt;
 	}

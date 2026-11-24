@@ -22,7 +22,8 @@ export function consumeFirstKeyApple(value: unknown, transcript: Uint8Array, key
  if (value === null || typeof value !== "object") return null;
  const original = originals.get(value as VerifiedFirstKeyApple);
  originals.delete(value as VerifiedFirstKeyApple);
- if (!original || Date.now() >= original.deadline || original.key.key_id_b64 !== keyId ||
+ if (!original || Date.now() >= Math.min(original.deadline, original.key.evidence_expires_at_ms,
+  original.key.status_expires_at_ms) || original.key.key_id_b64 !== keyId ||
   transcript.length !== original.transcript.length || !transcript.every((byte, i) => byte === original.transcript[i])) return null;
  return original.key;
 }
@@ -44,7 +45,8 @@ export function createWidgetFirstKeyAppleVerifier(
 		try {
 			// The existing verifier hashes the raw transcript for App Attest.
 			const evidence = await verifyAppleAttestationEvidence(attestation, transcript, keyId, selected, window, fetch);
-			if (!evidence || Date.now() >= expiresAt || deadline.aborted) return false;
+			if (!evidence || !Number.isSafeInteger(evidence.expires) || !Number.isSafeInteger(evidence.statusExpiresAt) ||
+                Date.now() >= Math.min(expiresAt, evidence.expires, evidence.statusExpiresAt) || deadline.aborted) return false;
             const result = Object.freeze({kind: "native_first_key_apple_crypto_only" as const});
             originals.set(result, {transcript: Uint8Array.from(transcript), deadline: expiresAt,
                 key: Object.freeze({key_id_b64: keyId, public_key_spki_b64: evidence.public_key_spki_b64,
