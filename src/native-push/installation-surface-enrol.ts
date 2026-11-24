@@ -82,28 +82,33 @@ export function createInstallationSurfaceEnrol(env: AppEnv, current: () => boole
     delegation.install_id, delegation.device_binding, delegation.owner_binding, delegation.grant_binding,
     delegation.source_binding, delegation.binding_id, keyHash, delegation.policy]));
    const claim = crypto.randomUUID();
+   // An original native first-key winner can transfer to one initial role only.
+   // Existing exact replay is read below, but cannot acquire another claim.
+   const initialGuard = guardSQL + ` AND NOT EXISTS(SELECT 1 FROM native_installation_surface_bindings
+    WHERE credential_id=? AND native_operation_id=? AND admission_kind='initial')`;
+   const initialValues = [...guardValues, credential.id, receipt.operation_id];
    await db.batch([
     db.prepare(`INSERT OR IGNORE INTO surface_push_operator_operations(operation_id,request_hash,delegation_id,kind,claim_id,outcome)
-     SELECT ?,?,?,'enrol',?,'pending' WHERE ${guardSQL}`)
-     .bind(delegation.operation_id, requestHash, delegation.delegation_id, claim, ...guardValues),
+     SELECT ?,?,?,'enrol',?,'pending' WHERE ${initialGuard}`)
+     .bind(delegation.operation_id, requestHash, delegation.delegation_id, claim, ...initialValues),
     db.prepare(`INSERT OR IGNORE INTO surface_push_delegations
      (id,revision,enrol_operation_id,approval_reference,install_id,device_binding,owner_binding,grant_binding,source_binding,
       binding_id,public_key_json,key_thumbprint,policy_json,scope_digest,expires_at,created_at,revoked_at)
-     SELECT ?,1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL WHERE ${guardSQL}
+     SELECT ?,1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL WHERE ${initialGuard}
       AND EXISTS(SELECT 1 FROM surface_push_operator_operations WHERE operation_id=? AND claim_id=? AND outcome='pending')`)
      .bind(delegation.delegation_id, delegation.operation_id, delegation.approval_reference, delegation.install_id,
       delegation.device_binding, delegation.owner_binding, delegation.grant_binding, delegation.source_binding,
       delegation.binding_id, canonical(delegation.public_key), keyHash, canonical(p), scope,
-      p.original_grant_expires_at_ms, Date.now(), ...guardValues, delegation.operation_id, claim),
+      p.original_grant_expires_at_ms, Date.now(), ...initialValues, delegation.operation_id, claim),
     db.prepare(`INSERT OR IGNORE INTO native_installation_surface_bindings
      (delegation_id,credential_id,credential_hash,ha_install_id,native_operation_id,native_receipt_json,pair_binding,
       consent_revision,enrolment_sha256,scope_digest)
-     SELECT ?,?,?,?,?,?,?,?,?,? WHERE ${guardSQL}
+     SELECT ?,?,?,?,?,?,?,?,?,? WHERE ${initialGuard}
       AND EXISTS(SELECT 1 FROM surface_push_operator_operations WHERE operation_id=? AND claim_id=? AND outcome='pending')
       AND EXISTS(SELECT 1 FROM surface_push_delegations WHERE id=? AND enrol_operation_id=? AND scope_digest=? AND revoked_at IS NULL)`)
      .bind(delegation.delegation_id, credential.id, credential.token_hash, credential.ha_install_id,
       receipt.operation_id, originalReceipt, original.pair_binding, row.consent_revision, requestHash, scope,
-      ...guardValues, delegation.operation_id, claim, delegation.delegation_id, delegation.operation_id, scope),
+      ...initialValues, delegation.operation_id, claim, delegation.delegation_id, delegation.operation_id, scope),
     db.prepare(`UPDATE surface_push_operator_operations SET outcome=CASE WHEN EXISTS(
      SELECT 1 FROM native_installation_surface_bindings n JOIN native_installation_live_delegations d ON d.id=n.delegation_id
      WHERE n.delegation_id=? AND n.enrolment_sha256=? AND n.scope_digest=?) THEN 'enrolled' ELSE 'conflict' END

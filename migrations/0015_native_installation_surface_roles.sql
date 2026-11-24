@@ -9,8 +9,11 @@ CREATE TABLE native_installation_surface_bindings (
  pair_binding TEXT NOT NULL,
  consent_revision INTEGER NOT NULL CHECK(consent_revision>0),
  enrolment_sha256 TEXT NOT NULL,
- scope_digest TEXT NOT NULL
+ scope_digest TEXT NOT NULL,
+ admission_kind TEXT NOT NULL DEFAULT 'initial' CHECK(admission_kind IN ('initial','reauthorization'))
 );
+CREATE UNIQUE INDEX native_installation_initial_role_once
+ ON native_installation_surface_bindings(credential_id,native_operation_id) WHERE admission_kind='initial';
 CREATE VIEW native_installation_live_delegations AS
  SELECT d.* FROM surface_push_delegations d
  JOIN native_installation_surface_bindings n ON n.delegation_id=d.id AND n.scope_digest=d.scope_digest

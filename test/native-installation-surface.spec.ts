@@ -156,6 +156,15 @@ it("does not equate first-key SPKI digest with Surface key/pair binding dialects
  expect(declaration.device_binding).not.toBe(original.device_binding);
  expect(await db.prepare("SELECT count(*) AS n FROM native_installation_live_delegations").first("n")).toBe(1);
 });
+it("one actual native first-key winner cannot multiply initial role grants with new operation/delegation IDs", async () => {
+ await enrolled();
+ const extra = {...declaration, operation_id: op(), delegation_id: "second-initial-role"};
+ expect((await createInstallationSurfaceEnrol(config, () => true)(post(installationEnrolPath,
+  await enrolBody(extra), credential.token))).status).toBe(409);
+ expect(await db.prepare("SELECT count(*) FROM native_installation_surface_bindings").first("count(*)")).toBe(1);
+ expect(await db.prepare("SELECT count(*) FROM surface_push_delegations").first("count(*)")).toBe(1);
+ expect(await db.prepare("SELECT count(*) FROM surface_push_capabilities").first("count(*)")).toBe(0);
+});
 it("rejects another credential with the same HA ID, modified receipt, wrong signature and substituted native target", async () => {
  const handler = createInstallationSurfaceEnrol(config, () => true);
  expect((await handler(post(installationEnrolPath, await enrolBody(), other.token))).status).toBe(403);
