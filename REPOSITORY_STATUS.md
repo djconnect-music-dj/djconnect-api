@@ -1,19 +1,20 @@
 # API Repository Status
 
-Repository `djconnect-music-dj/djconnect-api`, immutable ID `1275206655`. Core owns guest content and original session admission; the API remains a content-free routing/trust boundary.
+Repository `djconnect-music-dj/djconnect-api`, immutable ID `1275206655`. Core owns original Moment publication, session/pair/consent and native read authority; API owns scoped transport/trust.
 
 ## Reconciled predecessor
 
-[API #275](https://github.com/djconnect-music-dj/djconnect-api/pull/275) merged exact reviewed `90857f248ae1e0947a5a1c99ec0b22e4c75350e9` at `14984f5a084917d7b33d0a87735a9cbf4fdef49a`. Their trees are identical. It adds 16 actual local Worker/D1 authority-boundary regressions and ownership documentation; no Worker runtime, routes, permissions, bindings or migrations change.
+[API #278](https://github.com/djconnect-music-dj/djconnect-api/pull/278) merged exact reviewed `aeae4fc93aee0960c162cb28dd67aadcabc9c8c6` at `f0be0370979f8f6b360ca66e6effad06d083d31f`. Their trees are identical. It adds the original owned-Moment factory and actual D1/restore/SmartStack regression composition; no new wire, public route, default permission, schema or credential is introduced.
 
-At this Finalization's freeze point, the source predecessor remains `MERGED_UNRECONCILED`. **Prospective target only:** `MERGED_RECONCILED` becomes effective only after this separate Finalization's protected merge and its own exact-main CI and automatic internal publication PASS. No own-main qualification of this Finalization is claimed here.
+At this Finalization's freeze point, the source predecessor remains `MERGED_UNRECONCILED`. **Prospective target only:** `MERGED_RECONCILED` becomes effective only after this separate Finalization's protected merge and its own canonical required exact-main Validate and automatic internal publication PASS. The additional APT preparation failure remains OPEN; no 23/23 or complete-browser qualification is implied. No own-main qualification of this Finalization is claimed here.
 
 ## Execution Horizon
 
-1. Deliver separately approved original Watch adoption PR #278, with fresh current-main checks and its own Finalization.
-2. Review installation-owned native Widget enrollment/reauthorization PR #279; no merge approval is assumed.
-3. Qualify actual Apple SDK/key, scoped channel consent, clock, target and device delivery before any native push acceptance.
+1. Deliver the separate exact official APT-profile repair 26a through current-base review/CI/owner decision; preserve source #278 extra-preparation failure.
+2. Review and requalify installation-owned native Widget enrollment/reauthorization PR #279 against this reconciled main; no merge approval is assumed.
+3. Select only actually qualified signed Apple policy and original per-device/channel SDK, clock, target and read suppliers.
+4. Deploy only a separately approved exact manifest/artifact and prove requested provider/device behavior without inferred native acceptance.
 
 Source, internal publication, deployment and physical/native acceptance remain separate. Historical proof files are unchanged. All 22 historical operational gates remain OPEN.
 
-[Immutable source reconciliation](docs/history/prompts/2026-11-24-api-native-guest-boundary-finalization.md) and [machine evidence](docs/rendezvous/api-native-guest-boundary-finalization-20261124.json) preserve exact own-main results.
+[Immutable source reconciliation](docs/history/prompts/2026-11-24-api-original-watch-adoption-finalization.md) and [machine evidence](docs/rendezvous/api-original-watch-adoption-finalization-20261124.json) preserve exact own-main results.
