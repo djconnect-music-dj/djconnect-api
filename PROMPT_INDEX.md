@@ -4,17 +4,16 @@ Repository-local navigation; platform roadmap remains Core-owned.
 
 ## Reconciled predecessor
 
-[API #276](https://github.com/djconnect-music-dj/djconnect-api/pull/276) merged at `41059bd7357fcf0a0f8676065cf90d902504a235`. Its source tree equals reviewed candidate `fba1cd13cb8b0b569b4d9e840222f91eefa7cbeb` (tree `58d3861c4c4846e4af77f8175e411b4f86686e13`). This separate governance increment reconciles that implementation; it does not authorize deployment or native activation.
+[API #282](https://github.com/djconnect-music-dj/djconnect-api/pull/282) merged exact reviewed `97c71709f130a831d5d33d0e1b65661b62becbea` at `c947e47926154429a120a5385b6640676459275b`. Their trees are identical. It selects only the exact official Azure or AWS APT mirror profile before browser qualification. Original endpoint identities, priorities, one retry, probe/acquire deadlines and signed APT validation remain; no Worker runtime, permission or native admission changes.
 
 At this Finalization's freeze point, the source predecessor remains `MERGED_UNRECONCILED`. **Prospective target only:** `MERGED_RECONCILED` becomes effective only after this separate Finalization's protected merge and its own exact-main CI and automatic internal publication PASS. No own-main qualification of this Finalization is claimed here.
 
 ## Execution Horizon
 
-1. Requalify the existing guest-boundary PR #275 against reconciled main; no merge approval is assumed.
-2. Review the separate native Watch adoption branch and preserve its independent channel scopes.
-3. Join genuine paired-device consent, issuer custody and background-read authority before any native push activation.
+1. Requalify installation-owned native Widget enrollment/reauthorization PR #279 against current reconciled main and obtain its separate owner decision.
+2. Preserve original source278 APT failure history; new source/browser qualification does not retroactively alter it.
+3. Qualify actual signed Apple policy, per-channel SDK/clock/target and provider/device behavior before native acceptance.
 
-## Immutable history
+Source, internal publication, deployment and physical/native acceptance remain separate. Historical proof files are unchanged. All 22 historical operational gates remain OPEN.
 
-- [Earlier governance adoption](docs/history/prompts/2026-07-15-rg-api-001.md) remains unchanged.
-- [Canonical workflow repair Finalization](docs/history/prompts/2026-11-23-api-canonical-ci-pins-finalization.md) records this reconciliation.
+[Immutable source reconciliation](docs/history/prompts/2026-11-24-api-browser-apt-profile-finalization.md) and [machine evidence](docs/rendezvous/api-browser-apt-profile-finalization-20261124.json) preserve exact own-main results.

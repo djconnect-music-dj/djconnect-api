@@ -1,0 +1,360 @@
+{
+  "candidate_checks": {
+    "skipped": 1,
+    "success": 61
+  },
+  "durable_record": {
+    "commit_sha": "14984f5a084917d7b33d0a87735a9cbf4fdef49a",
+    "integrity": {
+      "algorithm": "sha256-canonical-json",
+      "digest": "861033c0f4e469a9b68d069855ba451b4a7c77703be0cb6a88273ff1df5e05b0"
+    },
+    "kind": "durable_qualification_evidence",
+    "policy_source_identity": {
+      "original_repository_id": 1258575431,
+      "original_revision": "4877403ba6fc69881439e70d3048da13ecb5576b",
+      "repository": "djconnect-music-dj/.github",
+      "repository_id": 1461539726,
+      "revision": "89a2a8b4c7571965249bed745bf7c5c37a1221f1",
+      "snapshot": "evidence-4877"
+    },
+    "published_at": "2026-11-24T06:41:12Z",
+    "qualification": {
+      "outcome": "POST_MERGE_RELEASE_EVIDENCE_QUALIFIED",
+      "profile": "post_merge_release_evidence",
+      "required_checks": {
+        "post_merge_build_validation": "PASS",
+        "post_merge_ci": "PASS",
+        "post_merge_coverage": "PASS",
+        "post_merge_governance": "PASS",
+        "post_merge_lint": "PASS",
+        "post_merge_static_analysis": "PASS",
+        "post_merge_tests": "PASS",
+        "required_checks": "PASS",
+        "software_assurance": "PASS",
+        "trusted_delivery": "PASS",
+        "verification": "PASS",
+        "workflow_integrity": "PASS"
+      }
+    },
+    "record_id": "djconnect-music-dj/djconnect-api@14984f5a084917d7b33d0a87735a9cbf4fdef49a:post-merge-release-evidence",
+    "redaction": {
+      "included_data": "formal allowlisted decision fields only",
+      "policy_version": 1,
+      "status": "REDACTED"
+    },
+    "release_identifier": "internal-api-14984f5a084917d7b33d0a87735a9cbf4fdef49a",
+    "repository": "djconnect-music-dj/djconnect-api",
+    "repository_role": "active_source",
+    "retention_class": "LONG_TERM",
+    "revision": 1,
+    "schema_version": 1,
+    "source_evidence_digest": "4a976413906eb57fa9a3239271fed6453a5170b58d774c1b967a721c8fce11f4",
+    "source_revision": "89a2a8b4c7571965249bed745bf7c5c37a1221f1",
+    "supplemental_evidence": [
+      {
+        "kind": "coverage_artifact_digest",
+        "sha256": "9163a6f9ec604007aa06148e73d37b7b12b808da3105e91e0fd3e89498bdf02e"
+      }
+    ],
+    "workflow_references": {
+      "post_merge_run_ids": [
+        "45341990949"
+      ],
+      "producer_run_id": "45342276429"
+    }
+  },
+  "effects": {
+    "deployment": false,
+    "native_activation": false,
+    "provider_or_device_acceptance": false
+  },
+  "independent_review": "Root exact90857f2 two-file scope GO; source bytes identical to independently reviewed 8b5",
+  "kind": "api_native_guest_boundary_finalization",
+  "local_guest_tests": 16,
+  "own_main_runs": [
+    {
+      "conclusion": "success",
+      "databaseId": 45342276174,
+      "event": "workflow_run",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45342276174",
+      "workflowName": "API release artifact"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45342276429,
+      "event": "workflow_run",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45342276429",
+      "workflowName": "Post-Merge Release Evidence"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990905,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990905",
+      "workflowName": "AI-development projection"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990817,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990817",
+      "workflowName": "Surface enrollment source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990987,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990987",
+      "workflowName": "Host app wake source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341991074,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341991074",
+      "workflowName": "Principal possession crypto DATA"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990822,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990822",
+      "workflowName": "Fixed rendezvous QA build"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990988,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990988",
+      "workflowName": "Installation registry transactions"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341991151,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341991151",
+      "workflowName": "Native proof transcript source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990962,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990962",
+      "workflowName": "Rich Session raw DATA profile"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341991104,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341991104",
+      "workflowName": "Push coordinator source qualification"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341991127,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341991127",
+      "workflowName": "Reusable workflow guard regression"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341991134,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341991134",
+      "workflowName": "Native proof DATA journal source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990967,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990967",
+      "workflowName": "Rich delivery adapter"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341991547,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341991547",
+      "workflowName": "Worker DO registry source conformance"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990782,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990782",
+      "workflowName": "TDE observe"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990940,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990940",
+      "workflowName": "Installation principal closed DATA"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341991179,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341991179",
+      "workflowName": "Host app wake private receiving source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990853,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990853",
+      "workflowName": "WidgetKit first-key source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341991022,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341991022",
+      "workflowName": "Watch Moment alert source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341991170,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341991170",
+      "workflowName": "CodeQL"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990949,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990949",
+      "workflowName": "Validate"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45341990719,
+      "event": "push",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45341990719",
+      "workflowName": "Local native experiment qualification"
+    }
+  ],
+  "owner_authorization_run": "https://github.com/djconnect-music-dj/djconnect/actions/runs/45341813379",
+  "reconciliation": {
+    "decision": "POST_MERGE_RELEASE_EVIDENCE_QUALIFIED",
+    "evidence_digest": "4a976413906eb57fa9a3239271fed6453a5170b58d774c1b967a721c8fce11f4",
+    "findings": [],
+    "kind": "post_merge_release_evidence",
+    "main_parents": [
+      "878a6701894d3044c29df3f85fcd3a17a4cffe71"
+    ],
+    "main_sha": "14984f5a084917d7b33d0a87735a9cbf4fdef49a",
+    "merge_actor": "pcvantol",
+    "merge_strategy": "SQUASH",
+    "originating_pr": {
+      "base_ref": "main",
+      "changed_files": [
+        "docs/rendezvous/NATIVE_GUEST_API_BOUNDARY_V1.md",
+        "test/vibecast-guest-boundary.spec.ts"
+      ],
+      "head_sha": "90857f248ae1e0947a5a1c99ec0b22e4c75350e9",
+      "main_changed_files": [
+        "docs/rendezvous/NATIVE_GUEST_API_BOUNDARY_V1.md",
+        "test/vibecast-guest-boundary.spec.ts"
+      ],
+      "merge_actor": "pcvantol",
+      "merge_commit_sha": "14984f5a084917d7b33d0a87735a9cbf4fdef49a",
+      "merge_strategy": "SQUASH",
+      "merged_at": "2026-11-24T06:38:42Z",
+      "number": 275,
+      "state": "MERGED"
+    },
+    "post_merge": {
+      "build_validation": "PASS",
+      "ci": "PASS",
+      "coverage": "PASS",
+      "coverage_artifact_sha": "sha256:9163a6f9ec604007aa06148e73d37b7b12b808da3105e91e0fd3e89498bdf02e",
+      "coverage_report_sha": "14984f5a084917d7b33d0a87735a9cbf4fdef49a",
+      "governance": "PASS",
+      "lint": "PASS",
+      "sha": "14984f5a084917d7b33d0a87735a9cbf4fdef49a",
+      "static_analysis": "PASS",
+      "tests": "PASS",
+      "workflow_run_ids": [
+        "45341990949"
+      ]
+    },
+    "pre_merge": {
+      "candidate_sha": "90857f248ae1e0947a5a1c99ec0b22e4c75350e9",
+      "owner_authorization": "PASS",
+      "required_checks": "PASS",
+      "risk_classification": "NORMAL_RISK",
+      "software_assurance": "PASS",
+      "trusted_delivery": "PASS",
+      "verification": "PASS",
+      "workflow_integrity": "PASS"
+    },
+    "provenance_result": "PASS",
+    "repository": "djconnect-music-dj/djconnect-api",
+    "repository_role": "active_source",
+    "schema_version": 1,
+    "source_qualified_pr_sha": "90857f248ae1e0947a5a1c99ec0b22e4c75350e9",
+    "timestamp": "2026-11-24T06:41:12.593Z"
+  },
+  "release_artifact": {
+    "artifact": {
+      "artifact_id": "14896162977",
+      "artifact_sha256": "541b1df6cb77bcbcfb8d1876dbd92e52cbba043f78f7d477b880cd2e78877bd1",
+      "candidate_sha": "14984f5a084917d7b33d0a87735a9cbf4fdef49a",
+      "kind": "api_worker_release_artifact",
+      "repository": "djconnect-music-dj/djconnect-api",
+      "schema_version": 1,
+      "timestamp": "2026-11-24T06:41:28Z"
+    },
+    "durableChecks": "ALL_PASS",
+    "durableIntegrity": "861033c0f4e469a9b68d069855ba451b4a7c77703be0cb6a88273ff1df5e05b0",
+    "effects": "NO_DEPLOYMENT_OR_NATIVE_ACCEPTANCE_CLAIM",
+    "formalDigest": "4a976413906eb57fa9a3239271fed6453a5170b58d774c1b967a721c8fce11f4",
+    "licenseManifest": "PASS",
+    "normalization": "one RELEASE_SOURCE_SHA assignment; remove sourceMappingURL directive; otherwise exact bytes",
+    "packagedSidecars": "MATCH exact source",
+    "regularFiles": 21,
+    "sha": "14984f5a084917d7b33d0a87735a9cbf4fdef49a",
+    "tarSHA256": "541b1df6cb77bcbcfb8d1876dbd92e52cbba043f78f7d477b880cd2e78877bd1",
+    "workerSHA256": "1c6228fdd23da87337ac38e2868e9da34ccaddc722b6a113d3b596cb07c1eb22"
+  },
+  "repository": "djconnect-music-dj/djconnect-api",
+  "repository_id": 1275206655,
+  "retained_original_sha256": {
+    "artifact-check.json": "671366b0b55e5d6cf236b02a8ae75fd244abf0152a0df39a7e03fd6d41f740cb",
+    "durable/qualification-evidence-14984f5a084917d7b33d0a87735a9cbf4fdef49a.json": "5b9daa65d9082f0e00bc20d493e7d3a35a7cd07b9da0cb9dac876ad80b21e426",
+    "reconciliation/post-merge-release-evidence.json": "3f96f8682a83dcdffabeb6626e98e71a60dcbc907ecd7d176345b214db4e18fe",
+    "release-metadata.json": "7e542d9b3da9f06fc6b1ef83912883e1aa012f94972d7395ee19bf46391319ae",
+    "runs.json": "8998be39ef33e7b5c13361da7e5b33c685dcdcb31cbed567acaeb2d2947ea89d"
+  },
+  "schema_version": 1,
+  "scope": "two test/documentation files, no runtime or admission change",
+  "source_head": "90857f248ae1e0947a5a1c99ec0b22e4c75350e9",
+  "source_merge": "14984f5a084917d7b33d0a87735a9cbf4fdef49a",
+  "source_pr": "https://github.com/djconnect-music-dj/djconnect-api/pull/275",
+  "source_tree": "1d117a3f978eb105703dfd8a2aabeeccb0f9ce3c"
+}
