@@ -1,3 +1,4 @@
+import './native-widget-source-delta.check.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtempSync,readFileSync,writeFileSync,mkdirSync,chmodSync,symlinkSync,rmSync} from 'node:fs';

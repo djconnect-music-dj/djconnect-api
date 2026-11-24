@@ -21,11 +21,47 @@ export function gitRead(args){
 export async function checkSourcePins(pins,base){
  for(const [p,h] of Object.entries(pins)){need(!p.includes('..')&&!p.startsWith('/'));need(sha(await readFile(join(base,p)))===h);}
 }
+const nativeDeltaPath='docs/rendezvous/installation-native-widget-source-delta-v1.json';
+const nativeDeltaPin='6b3ffda494c1eb530919793555861437bb9d0030330f932803f31349eab79c42';
+const nativeChanges=["coordinator/host-app-wake-receiving/native-assertion.ts", "src/index.ts", "src/surface-push/composition.ts", "src/surface-push/handler.ts", "src/surface-push/store.ts"],nativeAdditions=["coordinator/host-app-wake-receiving/native-assertion-crypto.ts", "migrations/0014_native_installation_publisher.sql", "migrations/0015_native_installation_surface_roles.sql", "migrations/0016_native_installation_apple_key.sql", "migrations/0017_native_installation_role_challenges.sql", "src/native-push/first-key-apple.ts", "src/native-push/first-key-service.ts", "src/native-push/first-key-wire.ts", "src/native-push/installation-dispatch.ts", "src/native-push/installation-first-key.ts", "src/native-push/installation-policy.ts", "src/native-push/installation-publisher.ts", "src/native-push/installation-reauthorization.ts", "src/native-push/installation-surface-dispatch.ts", "src/native-push/installation-surface-enrol.ts"];
+const nativeReferenceChanges=['coordinator/host-app-wake-receiving/runtime/source-inputs.json'];
+const nativeReferenceAdditions=['docs/native-push/NATIVE_INSTALLATION_PUBLISHER_V1.md'];
+const sameKeys=(value,keys)=>JSON.stringify(Object.keys(value).sort())===JSON.stringify([...keys].sort());
+const mapHash=value=>sha(Buffer.from(JSON.stringify(Object.fromEntries(Object.entries(value).sort(([a],[b])=>a<b?-1:a>b?1:0)))));
+export function validateNativeWidgetLayer(raw){
+ need(sha(raw)===nativeDeltaPin);const d=JSON.parse(raw);
+ need(sameKeys(d,['schema_version','scope','base_source','qualified_product_source','baseline_source_map_sha256','effective_source_map_sha256',
+  'changes','additions','reference_changes','reference_additions','prior_bytes_b64','map_additions_are_compiled_inputs_not_claimed_git_additions',
+  'legacy_public_activation_allowed','device_acceptance','production_effect_authorized'])&&d.schema_version===1&&
+  d.scope==='EXACT_INSTALLATION_NATIVE_WIDGET_SOURCE_NOT_DEVICE_ACCEPTANCE'&&d.base_source==='878a6701894d3044c29df3f85fcd3a17a4cffe71'&&
+  d.qualified_product_source==='0434553364bad3916ab21372cc7bef57f34f0e04'&&d.map_additions_are_compiled_inputs_not_claimed_git_additions===true&&
+  d.legacy_public_activation_allowed===false&&d.device_acceptance===false&&d.production_effect_authorized===false&&
+  sameKeys(d.changes,nativeChanges)&&sameKeys(d.additions,nativeAdditions)&&sameKeys(d.reference_changes,nativeReferenceChanges)&&
+  sameKeys(d.reference_additions,nativeReferenceAdditions)&&sameKeys(d.prior_bytes_b64,[...nativeChanges,...nativeReferenceChanges]));
+ for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
+  const old=Buffer.from(d.prior_bytes_b64[name],'base64');need(sameKeys(c,['before','after'])&&c.before!==c.after&&
+   old.toString('base64')===d.prior_bytes_b64[name]&&sha(old)===c.before);
+ }
+ return d;
+}
+async function nativeLayer(){return validateNativeWidgetLayer(await readFile(join(repo,nativeDeltaPath)));}
+export async function nativeWidgetPrevious(name,raw){
+ if(![...nativeChanges,...nativeReferenceChanges].includes(name))return raw;
+ const d=await nativeLayer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
+ return Buffer.from(d.prior_bytes_b64[name],'base64');
+}
+async function historicalRead(path,encoding){
+ const raw=await nativeWidgetPrevious(resolve(path).slice(repo.length+1),await readFile(path));
+ return encoding?raw.toString(encoding):raw;
+}
 export async function sourceSnapshot(){
  const status=gitRead(['status','--porcelain','--untracked-files=normal']);need(status.status===0&&status.stdout==='');
  const checked=spawnSync('python3',['scripts/validate_rendezvous_deployment_plan.py'],{cwd:repo,encoding:'utf8',timeout:30000});
  need(checked.status===0);const preparation=JSON.parse(checked.stdout);need(preparation.activation_allowed===false);
- const plan=JSON.parse(await readFile(join(repo,'docs/rendezvous/deployment-preparation-v1.json')));
+ const publishedPlan=JSON.parse(await readFile(join(repo,'docs/rendezvous/deployment-preparation-v1.json'))),native=await nativeLayer();
+ const plan={...publishedPlan,reference_hashes:{...publishedPlan.reference_hashes}};
+ for(const[name,c]of Object.entries(native.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
+
  const rootPath='docs/rendezvous/closed-enrollment-service-product-observations-v2.json';
  const rootRaw=await readFile(join(repo,rootPath));
  need(plan.reference_hashes[rootPath]===sha(rootRaw));
@@ -170,7 +206,7 @@ export async function sourceSnapshot(){
  need(sha(authorityRaw)==='a4a87feb002f94f8a8db3afe3414372ea51ae11b04dd7167f0f832d4c1967de1'&&plan.reference_hashes[authorityPath]===sha(authorityRaw)&&provenance.api_org_core_authority_delta_sha256===sha(authorityRaw));
  const authority=JSON.parse(authorityRaw);
  need(Object.keys(authority).sort().join(',')==='production_effect_authorized,public_activation_allowed,reference_changes,schema_version,scope'&&authority.schema_version===1&&authority.scope==='EXACT_API_ORGANIZATION_CORE_AUTHORITY_NOT_ACTIVATION'&&authority.public_activation_allowed===false&&authority.production_effect_authorized===false&&JSON.stringify(Object.keys(authority.reference_changes).sort())===JSON.stringify(orgReleaseFiles));
- for(const name of orgReleaseFiles){const c=orgRelease.reference_changes[name],a=authority.reference_changes[name],current=await readFile(join(repo,name),'utf8'),oldNames="['pcvantol/djconnect', 'djconnect-music-dj/djconnect']",newNames="['djconnect-music-dj/djconnect']";need(Object.keys(c).sort().join(',')==='after,before'&&c.before===identity.reference_changes[name].after&&Object.keys(a).sort().join(',')==='after,before'&&a.before===c.after&&current.split(newNames).length===2&&sha(Buffer.from(current.replace(newNames,oldNames)))===a.before&&sha(Buffer.from(current))===a.after&&plan.reference_hashes[name]===a.after);}
+ for(const name of orgReleaseFiles){const c=orgRelease.reference_changes[name],a=authority.reference_changes[name],current=await historicalRead(join(repo,name),'utf8'),oldNames="['pcvantol/djconnect', 'djconnect-music-dj/djconnect']",newNames="['djconnect-music-dj/djconnect']";need(Object.keys(c).sort().join(',')==='after,before'&&c.before===identity.reference_changes[name].after&&Object.keys(a).sort().join(',')==='after,before'&&a.before===c.after&&current.split(newNames).length===2&&sha(Buffer.from(current.replace(newNames,oldNames)))===a.before&&sha(Buffer.from(current))===a.after&&plan.reference_hashes[name]===a.after);}
  const summaryPath='docs/rendezvous/api-governance-summary-pin-source-delta-v1.json';
  const summaryRaw=await readFile(join(repo,summaryPath));
  need(sha(summaryRaw)==='15a78327a997ada80926e8443715787951b2a18967a7ddaac90fa373cd6efd32'&&plan.reference_hashes[summaryPath]===sha(summaryRaw)&&provenance.api_governance_summary_pin_delta_sha256===sha(summaryRaw));
@@ -202,11 +238,11 @@ export async function sourceSnapshot(){
  const delta41Previous={};
  for(const [name,change] of Object.entries(delta41.workflow_changes)){
   need(Object.keys(change).sort().join(',')==='after,before,replacements'&&Array.isArray(change.replacements)&&change.replacements.length>0);
-  let current=canonicalPrevious(name,await readFile(join(repo,name),'utf8'));need(sha(Buffer.from(current))===change.after);
+  let current=canonicalPrevious(name,await historicalRead(join(repo,name),'utf8'));need(sha(Buffer.from(current))===change.after);
   for(const item of change.replacements){need(Object.keys(item).sort().join(',')==='after,before'&&typeof item.before==='string'&&typeof item.after==='string'&&item.before!==item.after&&current.split(item.after).length===2);current=current.replace(item.after,item.before);}
   need(sha(Buffer.from(current))===change.before);delta41Previous[name]=current;
  }
- for(const [name,change] of Object.entries(delta41.version_source_changes))need(Object.keys(change).sort().join(',')==='after,before'&&sha(await readFile(join(repo,name)))===change.after);
+ for(const [name,change] of Object.entries(delta41.version_source_changes))need(Object.keys(change).sort().join(',')==='after,before'&&sha(await historicalRead(join(repo,name)))===change.after);
  const manifest41Path='docs/rendezvous/api-4-1-manifest-refresh-delta-v1.json',manifest41Raw=await readFile(join(repo,manifest41Path));
  need(sha(manifest41Raw)==='339f9911e7dcd8a7a5d6aaca6edba4dd574261318faf24647aa228429b40f760'&&plan.reference_hashes[manifest41Path]===sha(manifest41Raw)&&provenance.api_41_manifest_refresh_delta_sha256===sha(manifest41Raw));
  const manifest41=JSON.parse(manifest41Raw),manifest41Files=['coordinator/host-app-wake-receiving/runtime/source-inputs.json','coordinator/host-app-wake/source-manifest.json','coordinator/installation-principal/source-manifest.json','coordinator/installation-registry/source-manifest.json','coordinator/principal-possession/source-manifest.json','coordinator/rich-delivery/source-manifest.json','coordinator/rich-session/source-manifest.json','coordinator/source-manifest.json','coordinator/worker-do/source-manifest.json','qualification/watch-moment/source-manifest.json'].sort(),manifest41Previous={};
@@ -214,7 +250,7 @@ export async function sourceSnapshot(){
  need(JSON.stringify(Object.keys(canonical.manifest_changes).sort())===JSON.stringify(manifest41Files));
  for(const [name,change] of Object.entries(manifest41.manifest_changes)){
   need(Object.keys(change).sort().join(',')==='after,before,replacements'&&Array.isArray(change.replacements)&&change.replacements.length>0);
-  let current=canonicalPrevious(name,await readFile(join(repo,name),'utf8'));need(sha(Buffer.from(current))===change.after);const seen=new Set();
+  let current=canonicalPrevious(name,await historicalRead(join(repo,name),'utf8'));need(sha(Buffer.from(current))===change.after);const seen=new Set();
   for(const item of change.replacements){const pin=delta41.workflow_changes[item.input]||delta41.version_source_changes[item.input];need(Object.keys(item).sort().join(',')==='after,before,input'&&pin&&!seen.has(item.input));seen.add(item.input);const before=JSON.stringify(item.input)+': '+JSON.stringify(pin.before),after=JSON.stringify(item.input)+': '+JSON.stringify(pin.after);need(item.before===before&&item.after===after&&current.split(after).length===2);current=current.replace(after,before);}
   need(sha(Buffer.from(current))===change.before);manifest41Previous[name]=current;
  }
@@ -302,9 +338,17 @@ export async function sourceSnapshot(){
   if(Object.hasOwn(summary.workflow_changes,name)){need(summary.workflow_changes[name].before===expected);expected=summary.workflow_changes[name].after;}
   const final41=delta41.workflow_changes[name]||delta41.version_source_changes[name];if(final41){need(final41.before===expected);expected=final41.after;}
   if(canonical.workflow_changes[name]){need(canonical.workflow_changes[name].before===expected);expected=canonical.workflow_changes[name].after;}
+  if(native.changes[name]){need(native.changes[name].before===expected);expected=native.changes[name].after;}
   need(plan.source_hashes[name]===expected);
  }
- const pins={...root.source_hashes,...plan.source_hashes,...plan.reference_hashes};
+ const previousSources={...plan.source_hashes};
+ for(const[name,c]of Object.entries(native.changes)){need(previousSources[name]===c.after);previousSources[name]=c.before;}
+ for(const[name,pin]of Object.entries(native.additions)){need(previousSources[name]===pin);delete previousSources[name];}
+ need(mapHash(previousSources)===native.baseline_source_map_sha256&&mapHash(plan.source_hashes)===native.effective_source_map_sha256&&
+  provenance.installation_native_widget_source_delta_sha256===nativeDeltaPin&&provenance.installation_native_widget_source_map_sha256===native.effective_source_map_sha256&&
+  publishedPlan.reference_hashes[nativeDeltaPath]===nativeDeltaPin);
+ for(const[name,pin]of Object.entries(native.reference_additions))need(publishedPlan.reference_hashes[name]===pin);
+ const pins={...root.source_hashes,...plan.source_hashes,...publishedPlan.reference_hashes};
  const installed=Object.keys(root.source_hashes).filter(p=>p.startsWith('node_modules/'));need(installed.length===50);
  for(const [name,change] of Object.entries(dependency.installed_changes)){need(name==='node_modules/pkijs/build/index.js'&&pins[name]===change.before);pins[name]=change.after;}
  await checkSourcePins(pins,repo);
