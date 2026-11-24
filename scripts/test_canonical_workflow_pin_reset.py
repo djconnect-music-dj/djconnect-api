@@ -17,7 +17,7 @@ class CanonicalPinResetTests(unittest.TestCase):
         self.assertEqual(len(delta['manifest_changes']), 10)
         for name, change in {**delta['workflow_changes'], **delta['manifest_changes']}.items():
             with self.subTest(path=name):
-                raw = (v.ROOT / name).read_bytes()
+                raw = v.native_before_bytes(name)
                 self.assertEqual(v.digest(v.canonical_pin_previous(name, raw)), change['before'])
                 candidates = [raw + b'\n', raw.replace(delta['new_pin'].encode(), b'0'*40), raw.replace(b'permissions:', b'permissions_changed:')]
                 for candidate in candidates:

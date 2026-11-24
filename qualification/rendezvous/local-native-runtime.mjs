@@ -21,11 +21,158 @@ export function gitRead(args){
 export async function checkSourcePins(pins,base){
  for(const [p,h] of Object.entries(pins)){need(!p.includes('..')&&!p.startsWith('/'));need(sha(await readFile(join(base,p)))===h);}
 }
+const nativeDeltaPath='docs/rendezvous/installation-native-widget-source-delta-v1.json';
+const nativeDeltaPin='6b3ffda494c1eb530919793555861437bb9d0030330f932803f31349eab79c42';
+const nativeChanges=["coordinator/host-app-wake-receiving/native-assertion.ts", "src/index.ts", "src/surface-push/composition.ts", "src/surface-push/handler.ts", "src/surface-push/store.ts"],nativeAdditions=["coordinator/host-app-wake-receiving/native-assertion-crypto.ts", "migrations/0014_native_installation_publisher.sql", "migrations/0015_native_installation_surface_roles.sql", "migrations/0016_native_installation_apple_key.sql", "migrations/0017_native_installation_role_challenges.sql", "src/native-push/first-key-apple.ts", "src/native-push/first-key-service.ts", "src/native-push/first-key-wire.ts", "src/native-push/installation-dispatch.ts", "src/native-push/installation-first-key.ts", "src/native-push/installation-policy.ts", "src/native-push/installation-publisher.ts", "src/native-push/installation-reauthorization.ts", "src/native-push/installation-surface-dispatch.ts", "src/native-push/installation-surface-enrol.ts"];
+const nativeReferenceChanges=['coordinator/host-app-wake-receiving/runtime/source-inputs.json'];
+const nativeReferenceAdditions=['docs/native-push/NATIVE_INSTALLATION_PUBLISHER_V1.md'];
+const sameKeys=(value,keys)=>JSON.stringify(Object.keys(value).sort())===JSON.stringify([...keys].sort());
+const mapHash=value=>sha(Buffer.from(JSON.stringify(Object.fromEntries(Object.entries(value).sort(([a],[b])=>a<b?-1:a>b?1:0)))));
+export function validateNativeWidgetLayer(raw){
+ need(sha(raw)===nativeDeltaPin);const d=JSON.parse(raw);
+ need(sameKeys(d,['schema_version','scope','base_source','qualified_product_source','baseline_source_map_sha256','effective_source_map_sha256',
+  'changes','additions','reference_changes','reference_additions','prior_bytes_b64','map_additions_are_compiled_inputs_not_claimed_git_additions',
+  'legacy_public_activation_allowed','device_acceptance','production_effect_authorized'])&&d.schema_version===1&&
+  d.scope==='EXACT_INSTALLATION_NATIVE_WIDGET_SOURCE_NOT_DEVICE_ACCEPTANCE'&&d.base_source==='878a6701894d3044c29df3f85fcd3a17a4cffe71'&&
+  d.qualified_product_source==='0434553364bad3916ab21372cc7bef57f34f0e04'&&d.map_additions_are_compiled_inputs_not_claimed_git_additions===true&&
+  d.legacy_public_activation_allowed===false&&d.device_acceptance===false&&d.production_effect_authorized===false&&
+  sameKeys(d.changes,nativeChanges)&&sameKeys(d.additions,nativeAdditions)&&sameKeys(d.reference_changes,nativeReferenceChanges)&&
+  sameKeys(d.reference_additions,nativeReferenceAdditions)&&sameKeys(d.prior_bytes_b64,[...nativeChanges,...nativeReferenceChanges]));
+ for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
+  const old=Buffer.from(d.prior_bytes_b64[name],'base64');need(sameKeys(c,['before','after'])&&c.before!==c.after&&
+   old.toString('base64')===d.prior_bytes_b64[name]&&sha(old)===c.before);
+ }
+ return d;
+}
+async function nativeLayer(){return validateNativeWidgetLayer(await readFile(join(repo,nativeDeltaPath)));}
+const counterDeltaPath='docs/rendezvous/native-widget-counter-integrity-source-delta-v1.json';
+const counterDeltaPin='b05b708ea760dedf25c56ed008f2e7d9ac6d7844b7924d3ce902266b30234fb2';
+const counterChanges=['coordinator/host-app-wake-receiving/native-assertion-crypto.ts','src/native-push/installation-reauthorization.ts'];
+export function validateNativeCounterLayer(raw){
+ need(sha(raw)===counterDeltaPin);const d=JSON.parse(raw);
+ need(sameKeys(d,['schema_version','scope','base_source','qualified_product_source','baseline_source_map_sha256','effective_source_map_sha256',
+  'changes','reference_changes','prior_bytes_b64','legacy_public_activation_allowed','device_acceptance','production_effect_authorized'])&&
+  d.schema_version===1&&d.scope==='EXACT_NATIVE_WIDGET_COUNTER_INTEGRITY_NOT_AUTHORITY'&&
+  d.base_source==='a926c936881bdbf80d12f464ab3eef9aadcfac56'&&d.qualified_product_source==='d9df1610584960a7843361e9f8e5533b07bf85be'&&
+  d.legacy_public_activation_allowed===false&&d.device_acceptance===false&&d.production_effect_authorized===false&&
+  sameKeys(d.changes,counterChanges)&&sameKeys(d.reference_changes,nativeReferenceChanges)&&sameKeys(d.prior_bytes_b64,[...counterChanges,...nativeReferenceChanges]));
+ for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
+  const old=Buffer.from(d.prior_bytes_b64[name],'base64');need(sameKeys(c,['before','after'])&&c.before!==c.after&&
+   old.toString('base64')===d.prior_bytes_b64[name]&&sha(old)===c.before);
+ }
+ return d;
+}
+async function counterLayer(){return validateNativeCounterLayer(await readFile(join(repo,counterDeltaPath)));}
+const ackDeltaPath='docs/rendezvous/native-ack-key-bounds-source-delta-v1.json';
+const ackDeltaPin='68ced5635e8010c94203c09711b3ab16f6cac15e6dea4c6ed07518f17a669ea5';
+const ackChanges=['src/native-push/first-key-apple.ts','src/native-push/first-key-service.ts'];
+export function validateNativeAckLayer(raw){
+ need(sha(raw)===ackDeltaPin);const d=JSON.parse(raw);
+ need(sameKeys(d,['schema_version','scope','base_source','qualified_product_source','baseline_source_map_sha256','effective_source_map_sha256',
+  'changes','reference_changes','prior_bytes_b64','legacy_public_activation_allowed','device_acceptance','production_effect_authorized'])&&
+  d.schema_version===1&&d.scope==='EXACT_PRODUCTION_NATIVE_ACK_KEY_BOUNDS_NOT_AUTHORITY'&&
+  d.base_source==='dc82bbea402114a7e3b6bbea148b4fc90b0a9a6b'&&d.qualified_product_source==='3c2151e3b0e0dd29f33178b0061b576b8da9fd89'&&
+  d.legacy_public_activation_allowed===false&&d.device_acceptance===false&&d.production_effect_authorized===false&&
+  sameKeys(d.changes,ackChanges)&&sameKeys(d.reference_changes,nativeReferenceAdditions)&&sameKeys(d.prior_bytes_b64,[...ackChanges,...nativeReferenceAdditions]));
+ for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
+  const old=Buffer.from(d.prior_bytes_b64[name],'base64');need(sameKeys(c,['before','after'])&&c.before!==c.after&&
+   old.toString('base64')===d.prior_bytes_b64[name]&&sha(old)===c.before);
+ }
+ return d;
+}
+async function ackLayer(){return validateNativeAckLayer(await readFile(join(repo,ackDeltaPath)));}
+const uniqueDeltaPath='docs/rendezvous/native-apple-identity-uniqueness-source-delta-v1.json';
+const uniqueDeltaPin='4df2a69f62d2ee0d69ad318bbefc4117b965c8c10ef2c5aca21e9ae3449a08c6';
+const uniqueChanges=['src/native-push/first-key-service.ts'],uniqueAdditions=['migrations/0018_native_installation_unique_apple_identity.sql'];
+export function validateNativeUniqueLayer(raw){
+ need(sha(raw)===uniqueDeltaPin);const d=JSON.parse(raw);
+ need(sameKeys(d,['schema_version','scope','base_source','qualified_product_source','baseline_source_map_sha256','effective_source_map_sha256',
+  'changes','additions','reference_changes','prior_bytes_b64','legacy_public_activation_allowed','device_acceptance','production_effect_authorized'])&&
+  d.schema_version===1&&d.scope==='EXACT_REGISTERED_APPLE_KEY_UNIQUENESS_NOT_AUTHORITY'&&
+  d.base_source==='0e70921a4d96f24466c8eeabf22af05d2e4e5b10'&&d.qualified_product_source==='6d28012f2dc67bf46f327ff0a699f1dcce38d3d6'&&
+  d.legacy_public_activation_allowed===false&&d.device_acceptance===false&&d.production_effect_authorized===false&&
+  sameKeys(d.changes,uniqueChanges)&&sameKeys(d.additions,uniqueAdditions)&&sameKeys(d.reference_changes,nativeReferenceAdditions)&&sameKeys(d.prior_bytes_b64,[...uniqueChanges,...nativeReferenceAdditions]));
+ for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
+  const old=Buffer.from(d.prior_bytes_b64[name],'base64');need(sameKeys(c,['before','after'])&&c.before!==c.after&&
+   old.toString('base64')===d.prior_bytes_b64[name]&&sha(old)===c.before);
+ }
+ return d;
+}
+async function uniqueLayer(){return validateNativeUniqueLayer(await readFile(join(repo,uniqueDeltaPath)));}
+const policy40533DeltaPath='docs/rendezvous/native-ios40533-policy-source-delta-v1.json';
+const policy40533DeltaPin='75b7035dd6288326ae5518eff579cc921fb56eb6ff5484a75bc124c575b3bbfa';
+const policy40533Changes=['src/native-push/installation-policy.ts','src/native-push/installation-first-key.ts','src/native-push/first-key-service.ts'];
+const policy40533References=['docs/native-push/signed-ios-40533-policy-evidence.json'];
+export function validateNativePolicy40533Layer(raw){
+ need(sha(raw)===policy40533DeltaPin);const d=JSON.parse(raw);
+ need(sameKeys(d,['schema_version','scope','base_source','qualified_product_source','baseline_source_map_sha256','effective_source_map_sha256',
+  'changes','reference_changes','reference_additions','prior_bytes_b64','legacy_public_activation_allowed','device_acceptance','production_effect_authorized'])&&
+  d.schema_version===1&&d.scope==='EXACT_SELECTED_SIGNED_IOS40533_POLICY_NOT_NATIVE_ACCEPTANCE'&&
+  d.base_source==='c9da97d27123afa2d04098d19e3f30e1afc37d30'&&d.qualified_product_source==='9938907422fdf3f9c25d750b706c9eada9f2d360'&&
+  d.legacy_public_activation_allowed===false&&d.device_acceptance===false&&d.production_effect_authorized===false&&
+  sameKeys(d.changes,policy40533Changes)&&sameKeys(d.reference_changes,nativeReferenceAdditions)&&sameKeys(d.reference_additions,policy40533References)&&
+  sameKeys(d.prior_bytes_b64,[...policy40533Changes,...nativeReferenceAdditions]));
+ for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
+  const old=Buffer.from(d.prior_bytes_b64[name],'base64');need(sameKeys(c,['before','after'])&&c.before!==c.after&&
+   old.toString('base64')===d.prior_bytes_b64[name]&&sha(old)===c.before);
+ }
+ return d;
+}
+async function policy40533Layer(){return validateNativePolicy40533Layer(await readFile(join(repo,policy40533DeltaPath)));}
+export async function nativePolicy40533Previous(name,raw){
+ if(![...policy40533Changes,...nativeReferenceAdditions].includes(name))return raw;
+ const d=await policy40533Layer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
+ return Buffer.from(d.prior_bytes_b64[name],'base64');
+}
+export async function nativeUniquePrevious(name,raw){
+ raw=await nativePolicy40533Previous(name,raw);
+ if(![...uniqueChanges,...nativeReferenceAdditions].includes(name))return raw;
+ const d=await uniqueLayer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
+ return Buffer.from(d.prior_bytes_b64[name],'base64');
+}
+export async function nativeAckPrevious(name,raw){
+ raw=await nativeUniquePrevious(name,raw);
+ if(![...ackChanges,...nativeReferenceAdditions].includes(name))return raw;
+ const d=await ackLayer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
+ return Buffer.from(d.prior_bytes_b64[name],'base64');
+}
+export async function nativeCounterPrevious(name,raw){
+ raw=await nativeAckPrevious(name,raw);
+ if(![...counterChanges,...nativeReferenceChanges].includes(name))return raw;
+ const d=await counterLayer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
+ return Buffer.from(d.prior_bytes_b64[name],'base64');
+}
+export async function nativeWidgetPrevious(name,raw){
+ raw=await nativeCounterPrevious(name,raw);
+ if(![...nativeChanges,...nativeReferenceChanges].includes(name))return raw;
+ const d=await nativeLayer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
+ return Buffer.from(d.prior_bytes_b64[name],'base64');
+}
+async function historicalRead(path,encoding){
+ const raw=await nativeWidgetPrevious(resolve(path).slice(repo.length+1),await readFile(path));
+ return encoding?raw.toString(encoding):raw;
+}
 export async function sourceSnapshot(){
  const status=gitRead(['status','--porcelain','--untracked-files=normal']);need(status.status===0&&status.stdout==='');
  const checked=spawnSync('python3',['scripts/validate_rendezvous_deployment_plan.py'],{cwd:repo,encoding:'utf8',timeout:30000});
  need(checked.status===0);const preparation=JSON.parse(checked.stdout);need(preparation.activation_allowed===false);
- const plan=JSON.parse(await readFile(join(repo,'docs/rendezvous/deployment-preparation-v1.json')));
+ const publishedPlan=JSON.parse(await readFile(join(repo,'docs/rendezvous/deployment-preparation-v1.json'))),native=await nativeLayer(),counter=await counterLayer(),ack=await ackLayer(),unique=await uniqueLayer(),policy40533=await policy40533Layer();
+ const plan={...publishedPlan,source_hashes:{...publishedPlan.source_hashes},reference_hashes:{...publishedPlan.reference_hashes}};
+ for(const[name,c]of Object.entries(policy40533.changes)){need(plan.source_hashes[name]===c.after);plan.source_hashes[name]=c.before;}
+ for(const[name,c]of Object.entries(policy40533.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
+ for(const[name,pin]of Object.entries(policy40533.reference_additions)){need(plan.reference_hashes[name]===pin);delete plan.reference_hashes[name];}
+ const uniquePublishedSources={...plan.source_hashes};
+ for(const[name,c]of Object.entries(unique.changes)){need(plan.source_hashes[name]===c.after);plan.source_hashes[name]=c.before;}
+ for(const[name,pin]of Object.entries(unique.additions)){need(plan.source_hashes[name]===pin);delete plan.source_hashes[name];}
+ for(const[name,c]of Object.entries(unique.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
+ const ackPublishedSources={...plan.source_hashes};
+ for(const[name,c]of Object.entries(ack.changes)){need(plan.source_hashes[name]===c.after);plan.source_hashes[name]=c.before;}
+ for(const[name,c]of Object.entries(ack.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
+ const counterPublishedSources={...plan.source_hashes};
+ for(const[name,c]of Object.entries(counter.changes)){need(plan.source_hashes[name]===c.after);plan.source_hashes[name]=c.before;}
+ for(const[name,c]of Object.entries(counter.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
+ for(const[name,c]of Object.entries(native.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
+
  const rootPath='docs/rendezvous/closed-enrollment-service-product-observations-v2.json';
  const rootRaw=await readFile(join(repo,rootPath));
  need(plan.reference_hashes[rootPath]===sha(rootRaw));
@@ -170,7 +317,7 @@ export async function sourceSnapshot(){
  need(sha(authorityRaw)==='a4a87feb002f94f8a8db3afe3414372ea51ae11b04dd7167f0f832d4c1967de1'&&plan.reference_hashes[authorityPath]===sha(authorityRaw)&&provenance.api_org_core_authority_delta_sha256===sha(authorityRaw));
  const authority=JSON.parse(authorityRaw);
  need(Object.keys(authority).sort().join(',')==='production_effect_authorized,public_activation_allowed,reference_changes,schema_version,scope'&&authority.schema_version===1&&authority.scope==='EXACT_API_ORGANIZATION_CORE_AUTHORITY_NOT_ACTIVATION'&&authority.public_activation_allowed===false&&authority.production_effect_authorized===false&&JSON.stringify(Object.keys(authority.reference_changes).sort())===JSON.stringify(orgReleaseFiles));
- for(const name of orgReleaseFiles){const c=orgRelease.reference_changes[name],a=authority.reference_changes[name],current=await readFile(join(repo,name),'utf8'),oldNames="['pcvantol/djconnect', 'djconnect-music-dj/djconnect']",newNames="['djconnect-music-dj/djconnect']";need(Object.keys(c).sort().join(',')==='after,before'&&c.before===identity.reference_changes[name].after&&Object.keys(a).sort().join(',')==='after,before'&&a.before===c.after&&current.split(newNames).length===2&&sha(Buffer.from(current.replace(newNames,oldNames)))===a.before&&sha(Buffer.from(current))===a.after&&plan.reference_hashes[name]===a.after);}
+ for(const name of orgReleaseFiles){const c=orgRelease.reference_changes[name],a=authority.reference_changes[name],current=await historicalRead(join(repo,name),'utf8'),oldNames="['pcvantol/djconnect', 'djconnect-music-dj/djconnect']",newNames="['djconnect-music-dj/djconnect']";need(Object.keys(c).sort().join(',')==='after,before'&&c.before===identity.reference_changes[name].after&&Object.keys(a).sort().join(',')==='after,before'&&a.before===c.after&&current.split(newNames).length===2&&sha(Buffer.from(current.replace(newNames,oldNames)))===a.before&&sha(Buffer.from(current))===a.after&&plan.reference_hashes[name]===a.after);}
  const summaryPath='docs/rendezvous/api-governance-summary-pin-source-delta-v1.json';
  const summaryRaw=await readFile(join(repo,summaryPath));
  need(sha(summaryRaw)==='15a78327a997ada80926e8443715787951b2a18967a7ddaac90fa373cd6efd32'&&plan.reference_hashes[summaryPath]===sha(summaryRaw)&&provenance.api_governance_summary_pin_delta_sha256===sha(summaryRaw));
@@ -202,11 +349,11 @@ export async function sourceSnapshot(){
  const delta41Previous={};
  for(const [name,change] of Object.entries(delta41.workflow_changes)){
   need(Object.keys(change).sort().join(',')==='after,before,replacements'&&Array.isArray(change.replacements)&&change.replacements.length>0);
-  let current=canonicalPrevious(name,await readFile(join(repo,name),'utf8'));need(sha(Buffer.from(current))===change.after);
+  let current=canonicalPrevious(name,await historicalRead(join(repo,name),'utf8'));need(sha(Buffer.from(current))===change.after);
   for(const item of change.replacements){need(Object.keys(item).sort().join(',')==='after,before'&&typeof item.before==='string'&&typeof item.after==='string'&&item.before!==item.after&&current.split(item.after).length===2);current=current.replace(item.after,item.before);}
   need(sha(Buffer.from(current))===change.before);delta41Previous[name]=current;
  }
- for(const [name,change] of Object.entries(delta41.version_source_changes))need(Object.keys(change).sort().join(',')==='after,before'&&sha(await readFile(join(repo,name)))===change.after);
+ for(const [name,change] of Object.entries(delta41.version_source_changes))need(Object.keys(change).sort().join(',')==='after,before'&&sha(await historicalRead(join(repo,name)))===change.after);
  const manifest41Path='docs/rendezvous/api-4-1-manifest-refresh-delta-v1.json',manifest41Raw=await readFile(join(repo,manifest41Path));
  need(sha(manifest41Raw)==='339f9911e7dcd8a7a5d6aaca6edba4dd574261318faf24647aa228429b40f760'&&plan.reference_hashes[manifest41Path]===sha(manifest41Raw)&&provenance.api_41_manifest_refresh_delta_sha256===sha(manifest41Raw));
  const manifest41=JSON.parse(manifest41Raw),manifest41Files=['coordinator/host-app-wake-receiving/runtime/source-inputs.json','coordinator/host-app-wake/source-manifest.json','coordinator/installation-principal/source-manifest.json','coordinator/installation-registry/source-manifest.json','coordinator/principal-possession/source-manifest.json','coordinator/rich-delivery/source-manifest.json','coordinator/rich-session/source-manifest.json','coordinator/source-manifest.json','coordinator/worker-do/source-manifest.json','qualification/watch-moment/source-manifest.json'].sort(),manifest41Previous={};
@@ -214,7 +361,7 @@ export async function sourceSnapshot(){
  need(JSON.stringify(Object.keys(canonical.manifest_changes).sort())===JSON.stringify(manifest41Files));
  for(const [name,change] of Object.entries(manifest41.manifest_changes)){
   need(Object.keys(change).sort().join(',')==='after,before,replacements'&&Array.isArray(change.replacements)&&change.replacements.length>0);
-  let current=canonicalPrevious(name,await readFile(join(repo,name),'utf8'));need(sha(Buffer.from(current))===change.after);const seen=new Set();
+  let current=canonicalPrevious(name,await historicalRead(join(repo,name),'utf8'));need(sha(Buffer.from(current))===change.after);const seen=new Set();
   for(const item of change.replacements){const pin=delta41.workflow_changes[item.input]||delta41.version_source_changes[item.input];need(Object.keys(item).sort().join(',')==='after,before,input'&&pin&&!seen.has(item.input));seen.add(item.input);const before=JSON.stringify(item.input)+': '+JSON.stringify(pin.before),after=JSON.stringify(item.input)+': '+JSON.stringify(pin.after);need(item.before===before&&item.after===after&&current.split(after).length===2);current=current.replace(after,before);}
   need(sha(Buffer.from(current))===change.before);manifest41Previous[name]=current;
  }
@@ -302,9 +449,29 @@ export async function sourceSnapshot(){
   if(Object.hasOwn(summary.workflow_changes,name)){need(summary.workflow_changes[name].before===expected);expected=summary.workflow_changes[name].after;}
   const final41=delta41.workflow_changes[name]||delta41.version_source_changes[name];if(final41){need(final41.before===expected);expected=final41.after;}
   if(canonical.workflow_changes[name]){need(canonical.workflow_changes[name].before===expected);expected=canonical.workflow_changes[name].after;}
+  if(native.changes[name]){need(native.changes[name].before===expected);expected=native.changes[name].after;}
   need(plan.source_hashes[name]===expected);
  }
- const pins={...root.source_hashes,...plan.source_hashes,...plan.reference_hashes};
+ const previousSources={...plan.source_hashes};
+ for(const[name,c]of Object.entries(native.changes)){need(previousSources[name]===c.after);previousSources[name]=c.before;}
+ for(const[name,pin]of Object.entries(native.additions)){need(previousSources[name]===pin);delete previousSources[name];}
+ need(mapHash(previousSources)===native.baseline_source_map_sha256&&mapHash(plan.source_hashes)===native.effective_source_map_sha256&&
+  provenance.installation_native_widget_source_delta_sha256===nativeDeltaPin&&provenance.installation_native_widget_source_map_sha256===native.effective_source_map_sha256&&
+  publishedPlan.reference_hashes[nativeDeltaPath]===nativeDeltaPin);
+ for(const[name,pin]of Object.entries(native.reference_additions))need(plan.reference_hashes[name]===pin);
+ need(mapHash(plan.source_hashes)===counter.baseline_source_map_sha256&&counter.baseline_source_map_sha256===native.effective_source_map_sha256&&
+  mapHash(counterPublishedSources)===counter.effective_source_map_sha256&&provenance.native_widget_counter_integrity_delta_sha256===counterDeltaPin&&
+  provenance.native_widget_counter_integrity_source_map_sha256===counter.effective_source_map_sha256&&publishedPlan.reference_hashes[counterDeltaPath]===counterDeltaPin);
+ need(mapHash(counterPublishedSources)===ack.baseline_source_map_sha256&&ack.baseline_source_map_sha256===counter.effective_source_map_sha256&&
+  mapHash(ackPublishedSources)===ack.effective_source_map_sha256&&provenance.native_ack_key_bounds_delta_sha256===ackDeltaPin&&
+  provenance.native_ack_key_bounds_source_map_sha256===ack.effective_source_map_sha256&&publishedPlan.reference_hashes[ackDeltaPath]===ackDeltaPin);
+ need(mapHash(ackPublishedSources)===unique.baseline_source_map_sha256&&unique.baseline_source_map_sha256===ack.effective_source_map_sha256&&
+  mapHash(uniquePublishedSources)===unique.effective_source_map_sha256&&provenance.native_apple_identity_uniqueness_delta_sha256===uniqueDeltaPin&&
+  provenance.native_apple_identity_uniqueness_source_map_sha256===unique.effective_source_map_sha256&&publishedPlan.reference_hashes[uniqueDeltaPath]===uniqueDeltaPin);
+ need(mapHash(uniquePublishedSources)===policy40533.baseline_source_map_sha256&&policy40533.baseline_source_map_sha256===unique.effective_source_map_sha256&&
+  mapHash(publishedPlan.source_hashes)===policy40533.effective_source_map_sha256&&provenance.native_ios40533_policy_delta_sha256===policy40533DeltaPin&&
+  provenance.native_ios40533_policy_source_map_sha256===policy40533.effective_source_map_sha256&&publishedPlan.reference_hashes[policy40533DeltaPath]===policy40533DeltaPin);
+ const pins={...root.source_hashes,...publishedPlan.source_hashes,...publishedPlan.reference_hashes};
  const installed=Object.keys(root.source_hashes).filter(p=>p.startsWith('node_modules/'));need(installed.length===50);
  for(const [name,change] of Object.entries(dependency.installed_changes)){need(name==='node_modules/pkijs/build/index.js'&&pins[name]===change.before);pins[name]=change.after;}
  await checkSourcePins(pins,repo);

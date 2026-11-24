@@ -18,9 +18,13 @@ export interface OperationRow {
 }
 export class SurfaceStore {
  constructor(readonly db: D1Database) {}
- async authenticate(authorization: string | null, now: number): Promise<Principal> {
+ async authenticate(authorization: string | null, now: number, nativeHistoricalNegative = false): Promise<Principal> {
   need(authorization && /^Bearer djcs_[A-Za-z0-9_-]{43}$/.test(authorization), "surface_auth_required", 401);
-  const principal = await this.db.prepare("SELECT * FROM surface_push_live_capabilities WHERE token_hash=? AND revoked_at IS NULL AND expires_at>?").bind(await sha256Hex(authorization.slice(7)), now).first<Principal>();
+  const principal = nativeHistoricalNegative
+   ? await this.db.prepare("SELECT * FROM native_installation_historical_capabilities WHERE token_hash=?")
+      .bind(await sha256Hex(authorization.slice(7))).first<Principal>()
+   : await this.db.prepare("SELECT * FROM surface_push_live_capabilities WHERE token_hash=? AND revoked_at IS NULL AND expires_at>?")
+      .bind(await sha256Hex(authorization.slice(7)), now).first<Principal>();
   need(principal, "surface_auth_required", 401);
   need(Number.isSafeInteger(principal.expires_at) && /^[a-f0-9]{64}$/.test(principal.device_binding) && /^[a-f0-9]{64}$/.test(principal.owner_binding), "surface_configuration_invalid", 503);
   need(/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/.test(principal.parent_bundle) && ["sandbox", "production"].includes(principal.environment), "surface_configuration_invalid", 503);
@@ -36,13 +40,15 @@ export class SurfaceStore {
  }
  async target(id: string): Promise<TargetRow | null> { return this.db.prepare("SELECT * FROM surface_push_targets WHERE id=?").bind(id).first<TargetRow>(); }
  async operation(p: Principal, id: string): Promise<OperationRow | null> { return this.db.prepare("SELECT * FROM surface_push_operations WHERE capability_id=? AND operation_id=?").bind(p.id, id).first<OperationRow>(); }
- private claim(p: Principal, input: Coordinate, kind: Exclude<OperationKind, "status">, id: string, hash: string, claim: string, now: number, expiry: number): D1PreparedStatement {
+ private claim(p: Principal, input: Coordinate, kind: Exclude<OperationKind, "status">, id: string, hash: string, claim: string, now: number, expiry: number, nativeHistoricalNegative = false): D1PreparedStatement {
   return this.db.prepare(`INSERT OR IGNORE INTO surface_push_operations
    (capability_id,operation_id,request_hash,kind,target_id,claim_id,outcome,accepted_at,registration_id,generation,revision,expires_at)
    SELECT ?,?,?,?,?,?,'pending',?,?,?,?,? WHERE
-   EXISTS(SELECT 1 FROM surface_push_live_capabilities WHERE id=? AND revoked_at IS NULL AND expires_at>?) AND
+   ${nativeHistoricalNegative && kind === "revoke"
+    ? "EXISTS(SELECT 1 FROM native_installation_historical_capabilities WHERE id=?)"
+    : "EXISTS(SELECT 1 FROM surface_push_live_capabilities WHERE id=? AND revoked_at IS NULL AND expires_at>?)"} AND
    (SELECT COUNT(*) FROM surface_push_operations WHERE capability_id=? AND ((?='revoke' AND kind='revoke') OR (?!='revoke' AND kind!='revoke')))<?`)
-   .bind(p.id, input.operation_id, hash, kind, id, claim, now, input.registration_id, input.generation, input.revision, expiry, p.id, now, p.id, kind, kind, p.max_operations);
+   .bind(p.id, input.operation_id, hash, kind, id, claim, now, input.registration_id, input.generation, input.revision, expiry, p.id, ...(nativeHistoricalNegative && kind === "revoke" ? [] : [now]), p.id, kind, kind, p.max_operations);
  }
  private owns(p: Principal, input: Coordinate, claim: string): unknown[] { return [p.id, input.operation_id, claim]; }
  private readonly owned = "EXISTS(SELECT 1 FROM surface_push_operations WHERE capability_id=? AND operation_id=? AND claim_id=? AND outcome='pending')";
@@ -63,10 +69,10 @@ export class SurfaceStore {
     WHERE capability_id=? AND operation_id=? AND claim_id=?`).bind(id, claim, id, ...owned),
   ]);
  }
- async revoke(p: Principal, input: Coordinate, id: string, hash: string, claim: string, now: number): Promise<void> {
+ async revoke(p: Principal, input: Coordinate, id: string, hash: string, claim: string, now: number, nativeHistoricalNegative = false): Promise<void> {
   const owned = this.owns(p, input, claim);
   await this.db.batch([
-   this.claim(p, input, "revoke", id, hash, claim, now, 0),
+   this.claim(p, input, "revoke", id, hash, claim, now, 0, nativeHistoricalNegative),
    this.db.prepare(`INSERT OR IGNORE INTO surface_push_targets
     (id,capability_id,registration_id,generation,revision,binding_id,device_binding,owner_binding,expires_at,target_json,state,ciphertext,nonce,last_claim)
     SELECT ?,?,?,?,?,?,?,?,0,NULL,'revoked',NULL,NULL,? WHERE ${this.owned}`)
