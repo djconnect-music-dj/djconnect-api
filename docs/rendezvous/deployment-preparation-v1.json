@@ -141,11 +141,13 @@
     "docs/rendezvous/api-4-1-manifest-refresh-delta-v1.json": "339f9911e7dcd8a7a5d6aaca6edba4dd574261318faf24647aa228429b40f760",
     "docs/rendezvous/api-org-core-authority-source-delta-v1.json": "a4a87feb002f94f8a8db3afe3414372ea51ae11b04dd7167f0f832d4c1967de1",
     "docs/rendezvous/api-canonical-workflow-pin-reset-v1.json": "56fde11218670c5e22d23e9fe43eac373cec36e80501eafb563cf668f8369c8e",
-    "docs/native-push/NATIVE_INSTALLATION_PUBLISHER_V1.md": "a91f840942977aeaa648bc6a401dfd49058b5dd60d325603e16d5da1ee0a143e",
+    "docs/native-push/NATIVE_INSTALLATION_PUBLISHER_V1.md": "f5c3144f114986f41f88f501b0d251184d6ca8a260a654096abc3e8eefd7ee01",
     "docs/rendezvous/installation-native-widget-source-delta-v1.json": "6b3ffda494c1eb530919793555861437bb9d0030330f932803f31349eab79c42",
     "docs/rendezvous/native-widget-counter-integrity-source-delta-v1.json": "b05b708ea760dedf25c56ed008f2e7d9ac6d7844b7924d3ce902266b30234fb2",
     "docs/rendezvous/native-ack-key-bounds-source-delta-v1.json": "68ced5635e8010c94203c09711b3ab16f6cac15e6dea4c6ed07518f17a669ea5",
-    "docs/rendezvous/native-apple-identity-uniqueness-source-delta-v1.json": "4df2a69f62d2ee0d69ad318bbefc4117b965c8c10ef2c5aca21e9ae3449a08c6"
+    "docs/rendezvous/native-apple-identity-uniqueness-source-delta-v1.json": "4df2a69f62d2ee0d69ad318bbefc4117b965c8c10ef2c5aca21e9ae3449a08c6",
+    "docs/native-push/signed-ios-40533-policy-evidence.json": "65243dc4630fa9a22c21647bc477ff6a830d5cda78762d1670f568ed20ad8884",
+    "docs/rendezvous/native-ios40533-policy-source-delta-v1.json": "75b7035dd6288326ae5518eff579cc921fb56eb6ff5484a75bc124c575b3bbfa"
   },
   "schema_version": 1,
   "secret_names": [
@@ -309,11 +311,11 @@
     "migrations/0016_native_installation_apple_key.sql": "58424fc807c75c7e91c41abb68e2cf5331c6e4b650c615474861d2eaa75dac5b",
     "migrations/0017_native_installation_role_challenges.sql": "9cba75a3c56b6d8d65c75f76315ca478651b10f43bffb95c1a42a449a48f439a",
     "src/native-push/first-key-apple.ts": "6409622d92474bc4cb1b6d0c3a827c1de5e755483bc17c0ea154e65422022944",
-    "src/native-push/first-key-service.ts": "7a26b7a666b8a872631c14faffaf1c0dce6c479102b3e120cb019e4b40fb025a",
+    "src/native-push/first-key-service.ts": "738520564ea2a648d600b3a318bedd75d0dfa60428edf3091cf0834355966364",
     "src/native-push/first-key-wire.ts": "0f730351413a2623a61cdfa0225bbb7bd7a7a78fc37b9e0a73d0c2326b759620",
     "src/native-push/installation-dispatch.ts": "f51b3c1acf53530053e611ebeea10778f048c5c62144a0d12e252f722d0769e7",
-    "src/native-push/installation-first-key.ts": "c8d3243067760da1c253bc5c1f8896a2abeb5ab105b02aa2f79b82362d3dec5a",
-    "src/native-push/installation-policy.ts": "83cde55378df272f6e48197b033b3fe5896c5e075e3dbf080d07803db2e59415",
+    "src/native-push/installation-first-key.ts": "2923016a06c32b1171da4f5d8bcbfd5bd43939b35552d52a1effbc9ad0e244d6",
+    "src/native-push/installation-policy.ts": "70d24ef4780acbb44225440e5e6eece5cecd877f93310d1097e0d8d744cdaa47",
     "src/native-push/installation-publisher.ts": "1ba6d1f0c14e2145abb32de473c45ec10a69e31ad80bc35eb092bc91f551e104",
     "src/native-push/installation-reauthorization.ts": "0e95b8538fd493ae10a7e7b8c783f941c0cbf9fff95ad1b14922ca042e499637",
     "src/native-push/installation-surface-dispatch.ts": "ccb63b0eb048b06b1a7ac4241a01683b58fa2a57a5bd184dbab8d4ef64b4b0ce",
@@ -387,7 +389,9 @@
     "native_ack_key_bounds_delta_sha256": "68ced5635e8010c94203c09711b3ab16f6cac15e6dea4c6ed07518f17a669ea5",
     "native_ack_key_bounds_source_map_sha256": "72773388686c5c76a6d47ca5b48349da223b5ed3287b0f340f0413b311507add",
     "native_apple_identity_uniqueness_delta_sha256": "4df2a69f62d2ee0d69ad318bbefc4117b965c8c10ef2c5aca21e9ae3449a08c6",
-    "native_apple_identity_uniqueness_source_map_sha256": "897192620a65d85e209d37f2717e19514f468ccad203fe70d94261970086971a"
+    "native_apple_identity_uniqueness_source_map_sha256": "897192620a65d85e209d37f2717e19514f468ccad203fe70d94261970086971a",
+    "native_ios40533_policy_delta_sha256": "75b7035dd6288326ae5518eff579cc921fb56eb6ff5484a75bc124c575b3bbfa",
+    "native_ios40533_policy_source_map_sha256": "60d8a89d9d7136e83aea913deeb77ee7614f39342a0c6891e6d88347ca4de685"
   },
   "status": "NOT_AUTHORIZED",
   "supplying_source_sha": "896ccdc69447c231d04da3a6af4f27ea1f763697",

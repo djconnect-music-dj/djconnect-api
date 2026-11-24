@@ -99,7 +99,33 @@ export function validateNativeUniqueLayer(raw){
  return d;
 }
 async function uniqueLayer(){return validateNativeUniqueLayer(await readFile(join(repo,uniqueDeltaPath)));}
+const policy40533DeltaPath='docs/rendezvous/native-ios40533-policy-source-delta-v1.json';
+const policy40533DeltaPin='75b7035dd6288326ae5518eff579cc921fb56eb6ff5484a75bc124c575b3bbfa';
+const policy40533Changes=['src/native-push/installation-policy.ts','src/native-push/installation-first-key.ts','src/native-push/first-key-service.ts'];
+const policy40533References=['docs/native-push/signed-ios-40533-policy-evidence.json'];
+export function validateNativePolicy40533Layer(raw){
+ need(sha(raw)===policy40533DeltaPin);const d=JSON.parse(raw);
+ need(sameKeys(d,['schema_version','scope','base_source','qualified_product_source','baseline_source_map_sha256','effective_source_map_sha256',
+  'changes','reference_changes','reference_additions','prior_bytes_b64','legacy_public_activation_allowed','device_acceptance','production_effect_authorized'])&&
+  d.schema_version===1&&d.scope==='EXACT_SELECTED_SIGNED_IOS40533_POLICY_NOT_NATIVE_ACCEPTANCE'&&
+  d.base_source==='c9da97d27123afa2d04098d19e3f30e1afc37d30'&&d.qualified_product_source==='9938907422fdf3f9c25d750b706c9eada9f2d360'&&
+  d.legacy_public_activation_allowed===false&&d.device_acceptance===false&&d.production_effect_authorized===false&&
+  sameKeys(d.changes,policy40533Changes)&&sameKeys(d.reference_changes,nativeReferenceAdditions)&&sameKeys(d.reference_additions,policy40533References)&&
+  sameKeys(d.prior_bytes_b64,[...policy40533Changes,...nativeReferenceAdditions]));
+ for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
+  const old=Buffer.from(d.prior_bytes_b64[name],'base64');need(sameKeys(c,['before','after'])&&c.before!==c.after&&
+   old.toString('base64')===d.prior_bytes_b64[name]&&sha(old)===c.before);
+ }
+ return d;
+}
+async function policy40533Layer(){return validateNativePolicy40533Layer(await readFile(join(repo,policy40533DeltaPath)));}
+export async function nativePolicy40533Previous(name,raw){
+ if(![...policy40533Changes,...nativeReferenceAdditions].includes(name))return raw;
+ const d=await policy40533Layer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
+ return Buffer.from(d.prior_bytes_b64[name],'base64');
+}
 export async function nativeUniquePrevious(name,raw){
+ raw=await nativePolicy40533Previous(name,raw);
  if(![...uniqueChanges,...nativeReferenceAdditions].includes(name))return raw;
  const d=await uniqueLayer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
  return Buffer.from(d.prior_bytes_b64[name],'base64');
@@ -130,8 +156,12 @@ export async function sourceSnapshot(){
  const status=gitRead(['status','--porcelain','--untracked-files=normal']);need(status.status===0&&status.stdout==='');
  const checked=spawnSync('python3',['scripts/validate_rendezvous_deployment_plan.py'],{cwd:repo,encoding:'utf8',timeout:30000});
  need(checked.status===0);const preparation=JSON.parse(checked.stdout);need(preparation.activation_allowed===false);
- const publishedPlan=JSON.parse(await readFile(join(repo,'docs/rendezvous/deployment-preparation-v1.json'))),native=await nativeLayer(),counter=await counterLayer(),ack=await ackLayer(),unique=await uniqueLayer();
+ const publishedPlan=JSON.parse(await readFile(join(repo,'docs/rendezvous/deployment-preparation-v1.json'))),native=await nativeLayer(),counter=await counterLayer(),ack=await ackLayer(),unique=await uniqueLayer(),policy40533=await policy40533Layer();
  const plan={...publishedPlan,source_hashes:{...publishedPlan.source_hashes},reference_hashes:{...publishedPlan.reference_hashes}};
+ for(const[name,c]of Object.entries(policy40533.changes)){need(plan.source_hashes[name]===c.after);plan.source_hashes[name]=c.before;}
+ for(const[name,c]of Object.entries(policy40533.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
+ for(const[name,pin]of Object.entries(policy40533.reference_additions)){need(plan.reference_hashes[name]===pin);delete plan.reference_hashes[name];}
+ const uniquePublishedSources={...plan.source_hashes};
  for(const[name,c]of Object.entries(unique.changes)){need(plan.source_hashes[name]===c.after);plan.source_hashes[name]=c.before;}
  for(const[name,pin]of Object.entries(unique.additions)){need(plan.source_hashes[name]===pin);delete plan.source_hashes[name];}
  for(const[name,c]of Object.entries(unique.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
@@ -436,8 +466,11 @@ export async function sourceSnapshot(){
   mapHash(ackPublishedSources)===ack.effective_source_map_sha256&&provenance.native_ack_key_bounds_delta_sha256===ackDeltaPin&&
   provenance.native_ack_key_bounds_source_map_sha256===ack.effective_source_map_sha256&&publishedPlan.reference_hashes[ackDeltaPath]===ackDeltaPin);
  need(mapHash(ackPublishedSources)===unique.baseline_source_map_sha256&&unique.baseline_source_map_sha256===ack.effective_source_map_sha256&&
-  mapHash(publishedPlan.source_hashes)===unique.effective_source_map_sha256&&provenance.native_apple_identity_uniqueness_delta_sha256===uniqueDeltaPin&&
+  mapHash(uniquePublishedSources)===unique.effective_source_map_sha256&&provenance.native_apple_identity_uniqueness_delta_sha256===uniqueDeltaPin&&
   provenance.native_apple_identity_uniqueness_source_map_sha256===unique.effective_source_map_sha256&&publishedPlan.reference_hashes[uniqueDeltaPath]===uniqueDeltaPin);
+ need(mapHash(uniquePublishedSources)===policy40533.baseline_source_map_sha256&&policy40533.baseline_source_map_sha256===unique.effective_source_map_sha256&&
+  mapHash(publishedPlan.source_hashes)===policy40533.effective_source_map_sha256&&provenance.native_ios40533_policy_delta_sha256===policy40533DeltaPin&&
+  provenance.native_ios40533_policy_source_map_sha256===policy40533.effective_source_map_sha256&&publishedPlan.reference_hashes[policy40533DeltaPath]===policy40533DeltaPin);
  const pins={...root.source_hashes,...publishedPlan.source_hashes,...publishedPlan.reference_hashes};
  const installed=Object.keys(root.source_hashes).filter(p=>p.startsWith('node_modules/'));need(installed.length===50);
  for(const [name,change] of Object.entries(dependency.installed_changes)){need(name==='node_modules/pkijs/build/index.js'&&pins[name]===change.before);pins[name]=change.after;}

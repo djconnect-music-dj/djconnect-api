@@ -1463,6 +1463,7 @@ def unique_apple_delta():
 
 
 def unique_previous_bytes(name, raw):
+    raw = policy40533_previous_bytes(name, raw)
     if name not in UNIQUE_APPLE_CHANGES | UNIQUE_APPLE_REFERENCE_CHANGES:
         return raw
     import base64
@@ -1477,7 +1478,7 @@ def unique_installation_delta(sources, references):
     require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
     for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
         for name, change in changes.items():
-            require(target[name] == change['before'] and digest(safe_path(name).read_bytes()) == change['after'])
+            require(target[name] == change['before'] and digest(policy40533_previous_bytes(name, safe_path(name).read_bytes())) == change['after'])
             target[name] = change['after']
     for name, pin in delta['additions'].items():
         require(name not in sources and digest(safe_path(name).read_bytes()) == pin)
@@ -1485,6 +1486,66 @@ def unique_installation_delta(sources, references):
     require(source_map_digest(sources) == delta['effective_source_map_sha256']
         == SOURCE_PROVENANCE['native_apple_identity_uniqueness_source_map_sha256'])
     references[UNIQUE_APPLE_DELTA_PATH] = UNIQUE_APPLE_DELTA_SHA256
+    return sources, references
+
+
+POLICY40533_DELTA_PATH = 'docs/rendezvous/native-ios40533-policy-source-delta-v1.json'
+POLICY40533_DELTA_SHA256 = '75b7035dd6288326ae5518eff579cc921fb56eb6ff5484a75bc124c575b3bbfa'
+POLICY40533_CHANGES = frozenset(('src/native-push/installation-policy.ts', 'src/native-push/installation-first-key.ts', 'src/native-push/first-key-service.ts'))
+POLICY40533_REFERENCE_CHANGES = NATIVE_WIDGET_REFERENCE_ADDITIONS
+POLICY40533_REFERENCE_ADDITIONS = frozenset(('docs/native-push/signed-ios-40533-policy-evidence.json',))
+SOURCE_PROVENANCE.update(native_ios40533_policy_delta_sha256=POLICY40533_DELTA_SHA256,
+    native_ios40533_policy_source_map_sha256='60d8a89d9d7136e83aea913deeb77ee7614f39342a0c6891e6d88347ca4de685')
+
+
+def policy40533_delta():
+    delta = pinned_working_proof(POLICY40533_DELTA_PATH, POLICY40533_DELTA_SHA256)
+    require(set(delta) == {'schema_version', 'scope', 'base_source', 'qualified_product_source',
+        'baseline_source_map_sha256', 'effective_source_map_sha256', 'changes', 'reference_changes',
+        'reference_additions', 'prior_bytes_b64', 'legacy_public_activation_allowed', 'device_acceptance',
+        'production_effect_authorized'})
+    require(type(delta['schema_version']) is int and delta['schema_version'] == 1
+        and delta['scope'] == 'EXACT_SELECTED_SIGNED_IOS40533_POLICY_NOT_NATIVE_ACCEPTANCE'
+        and delta['base_source'] == 'c9da97d27123afa2d04098d19e3f30e1afc37d30'
+        and delta['qualified_product_source'] == '9938907422fdf3f9c25d750b706c9eada9f2d360'
+        and delta['baseline_source_map_sha256'] == SOURCE_PROVENANCE['native_apple_identity_uniqueness_source_map_sha256']
+        and delta['legacy_public_activation_allowed'] is False and delta['device_acceptance'] is False
+        and delta['production_effect_authorized'] is False
+        and set(delta['changes']) == POLICY40533_CHANGES
+        and set(delta['reference_changes']) == POLICY40533_REFERENCE_CHANGES
+        and set(delta['reference_additions']) == POLICY40533_REFERENCE_ADDITIONS
+        and set(delta['prior_bytes_b64']) == POLICY40533_CHANGES | POLICY40533_REFERENCE_CHANGES)
+    import base64
+    for name, change in {**delta['changes'], **delta['reference_changes']}.items():
+        require(set(change) == {'before', 'after'} and change['before'] != change['after'])
+        raw = base64.b64decode(delta['prior_bytes_b64'][name], validate=True)
+        require(digest(raw) == change['before'] and base64.b64encode(raw).decode() == delta['prior_bytes_b64'][name])
+    return delta
+
+
+def policy40533_previous_bytes(name, raw):
+    if name not in POLICY40533_CHANGES | POLICY40533_REFERENCE_CHANGES:
+        return raw
+    import base64
+    delta = policy40533_delta()
+    change = delta['changes'].get(name) or delta['reference_changes'][name]
+    require(digest(raw) == change['after'])
+    return base64.b64decode(delta['prior_bytes_b64'][name], validate=True)
+
+
+def policy40533_installation_delta(sources, references):
+    delta = policy40533_delta()
+    require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
+    for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
+        for name, change in changes.items():
+            require(target[name] == change['before'] and digest(safe_path(name).read_bytes()) == change['after'])
+            target[name] = change['after']
+    for name, pin in delta['reference_additions'].items():
+        require(name not in references and digest(safe_path(name).read_bytes()) == pin)
+        references[name] = pin
+    require(source_map_digest(sources) == delta['effective_source_map_sha256']
+        == SOURCE_PROVENANCE['native_ios40533_policy_source_map_sha256'])
+    references[POLICY40533_DELTA_PATH] = POLICY40533_DELTA_SHA256
     return sources, references
 
 
@@ -1753,7 +1814,7 @@ def baseline():
                 require(target[name] == change['before'])
                 target[name] = change['after']
     refs[CANONICAL_PIN_DELTA_PATH] = CANONICAL_PIN_DELTA_SHA256
-    return unique_installation_delta(*ack_installation_delta(*counter_installation_delta(*native_installation_delta(sources, refs))))
+    return policy40533_installation_delta(*unique_installation_delta(*ack_installation_delta(*counter_installation_delta(*native_installation_delta(sources, refs)))))
 
 
 def validate(plan):

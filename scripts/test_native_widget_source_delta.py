@@ -97,3 +97,22 @@ class NativeWidgetSourceDeltaTests(unittest.TestCase):
             with patch.object(v, 'safe_path', side_effect=lambda n: fake if n == v.UNIQUE_APPLE_DELTA_PATH else original(n)):
                 with self.assertRaises(ValueError):
                     v.unique_apple_delta()
+
+    def test_selected_40533_policy_reconstructs_exact_predecessors_and_rejects_actual_drift(self):
+        delta = v.policy40533_delta()
+        self.assertEqual(len(delta['changes']), 3)
+        for name, change in {**delta['changes'], **delta['reference_changes']}.items():
+            raw = (v.ROOT / name).read_bytes()
+            self.assertEqual(v.digest(v.policy40533_previous_bytes(name, raw)), change['before'])
+            with self.assertRaises(ValueError):
+                v.policy40533_previous_bytes(name, raw + b'\n')
+
+    def test_selected_40533_delta_and_static_evidence_cannot_be_tampered(self):
+        original = v.safe_path
+        for name in (v.POLICY40533_DELTA_PATH, *v.POLICY40533_REFERENCE_ADDITIONS):
+            with tempfile.TemporaryDirectory() as directory:
+                fake = Path(directory) / 'tampered'
+                fake.write_bytes((v.ROOT / name).read_bytes() + b'\n')
+                with patch.object(v, 'safe_path', side_effect=lambda n: fake if n == name else original(n)):
+                    with self.assertRaises(ValueError):
+                        v.validate(v.decode((v.ROOT / "docs/rendezvous/deployment-preparation-v1.json").read_bytes()))
