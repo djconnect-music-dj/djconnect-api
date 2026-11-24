@@ -4,6 +4,7 @@ import { createInstallationPublisher, installationPrefix } from "./installation-
 import { createInstallationFirstKey } from "./installation-first-key";
 import { installationNativePolicy } from "./installation-policy";
 import { isWidgetFirstKeyRoute } from "./first-key-service";
+import { createInstallationReauthorization, reauthorizationPrefix } from "./installation-reauthorization";
 
 const origin = "https://api.djconnect.dev";
 /** Authenticated own-installation publication, with separate native first trust.
@@ -17,6 +18,8 @@ export function dispatchNativeInstallationRequest(request: Request, env: unknown
  const db = selected.DB;
  const current = () => selected.DB === db;
  if (path === installationEnrolPath) return createInstallationSurfaceEnrol(selected, current)(request);
+ if (path === reauthorizationPrefix+"challenge" || path === reauthorizationPrefix+"register")
+  return createInstallationReauthorization(selected, current)(request);
  return installation ? createInstallationPublisher(db, origin, current)(request) :
   createInstallationFirstKey(db, origin, current, installationNativePolicy)(request);
 }

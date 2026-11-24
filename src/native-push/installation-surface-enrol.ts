@@ -12,6 +12,7 @@ const nowSQL = "CAST(unixepoch('subsec')*1000 AS INTEGER)";
 const headers = { "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" };
 interface NativeRow {
  receipt: string; key_spki: string; original_request: string; expires_at_ms: number; consent_revision: number;
+ apple_evidence_expires_at_ms:number; apple_status_expires_at_ms:number;
 }
 export function installationEnrolSigningBytes(receipt: unknown, delegation: unknown): Uint8Array<ArrayBuffer> {
  return Uint8Array.from(new TextEncoder().encode(canonical([installationEnrolVersion, "POST", installationEnrolPath, receipt, delegation])));
@@ -35,11 +36,13 @@ export function createInstallationSurfaceEnrol(env: AppEnv, current: () => boole
    need(receipt.install_credential_id === credential.id && receipt.state === "registered" && receipt.key_revision === 1,
     "native_role_first_key_required", 403);
    const originalReceipt = canonical(receipt);
-   const guardSQL = `EXISTS(SELECT 1 FROM native_installation_first_key k
+   let guardSQL = `EXISTS(SELECT 1 FROM native_installation_first_key k
     JOIN install_tokens i ON i.id=k.credential_id AND i.token_hash=? AND i.ha_install_id=? AND i.disabled=0
     JOIN native_installation_pair_publications p ON p.credential_id=k.credential_id AND p.operation_id=k.operation_id
     WHERE k.credential_id=? AND k.operation_id=? AND k.receipt=? AND k.policy_id=? AND k.retired=0
     AND k.expires_at_ms>${nowSQL} AND p.request_expires_at_ms>${nowSQL}
+    AND k.apple_key_id_b64 IS NOT NULL AND k.apple_public_key_spki_b64 IS NOT NULL AND k.apple_assertion_policy_json IS NOT NULL
+    AND k.apple_evidence_expires_at_ms>${nowSQL} AND k.apple_status_expires_at_ms>${nowSQL}
     AND json_extract(k.original_request,'$.pairing_generation')=p.pairing_generation
     AND json_extract(k.original_request,'$.pair_binding')=p.pair_binding
     AND json_extract(k.original_request,'$.owner_binding')=p.owner_binding
@@ -52,7 +55,7 @@ export function createInstallationSurfaceEnrol(env: AppEnv, current: () => boole
     AND ?>${nowSQL}`;
    const guardValues = [credential.token_hash, credential.ha_install_id, credential.id,
     receipt.operation_id, originalReceipt, policy.id, policy.expiresAt];
-   const row = await db.prepare(`SELECT k.receipt,k.key_spki,k.original_request,k.expires_at_ms,p.consent_revision
+   const row = await db.prepare(`SELECT k.receipt,k.key_spki,k.original_request,k.expires_at_ms,p.consent_revision,k.apple_evidence_expires_at_ms,k.apple_status_expires_at_ms
     FROM native_installation_first_key k JOIN native_installation_pair_publications p
     ON p.credential_id=k.credential_id AND p.operation_id=k.operation_id
     WHERE k.credential_id=? AND k.operation_id=? AND k.receipt=? AND ${guardSQL}`)
@@ -64,7 +67,11 @@ export function createInstallationSurfaceEnrol(env: AppEnv, current: () => boole
     p.token_role === "widget" && p.platform === "ios" && p.activity_profile === null && p.external_content_allowed === false &&
     p.apns_environment === env.APNS_ENVIRONMENT && p.target.app_bundle_id === "dev.djconnect.ios" &&
     p.target.extension_bundle_id === "dev.djconnect.ios.track-insight-widget" && p.target.widget_kind === "DJConnectSessionWidget" &&
-    p.original_grant_expires_at_ms <= policy.expiresAt, "native_role_scope_mismatch", 403);
+    p.original_grant_expires_at_ms <= Math.min(policy.expiresAt,row.apple_evidence_expires_at_ms,row.apple_status_expires_at_ms), "native_role_scope_mismatch", 403);
+   guardSQL += ` AND EXISTS(SELECT 1 FROM native_installation_first_key WHERE credential_id=? AND operation_id=? AND receipt=?
+    AND apple_evidence_expires_at_ms=? AND apple_status_expires_at_ms=? AND apple_evidence_expires_at_ms>=? AND apple_status_expires_at_ms>=?)`;
+   guardValues.push(credential.id,receipt.operation_id,originalReceipt,row.apple_evidence_expires_at_ms,row.apple_status_expires_at_ms,
+    p.original_grant_expires_at_ms,p.original_grant_expires_at_ms);
    const rawSPKI = Uint8Array.from(atob(row.key_spki), c => c.charCodeAt(0));
    const key = await crypto.subtle.importKey("spki", rawSPKI, { name: "ECDSA", namedCurve: "P-256" }, true, ["verify"]);
    const jwk = await crypto.subtle.exportKey("jwk", key) as JsonWebKey;
@@ -101,13 +108,13 @@ export function createInstallationSurfaceEnrol(env: AppEnv, current: () => boole
       delegation.binding_id, canonical(delegation.public_key), keyHash, canonical(p), scope,
       p.original_grant_expires_at_ms, Date.now(), ...initialValues, delegation.operation_id, claim),
     db.prepare(`INSERT OR IGNORE INTO native_installation_surface_bindings
-     (delegation_id,credential_id,credential_hash,ha_install_id,native_operation_id,native_receipt_json,pair_binding,
+     (delegation_id,credential_id,credential_hash,ha_install_id,native_operation_id,publication_operation_id,native_receipt_json,pair_binding,
       consent_revision,enrolment_sha256,scope_digest)
-     SELECT ?,?,?,?,?,?,?,?,?,? WHERE ${initialGuard}
+     SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE ${initialGuard}
       AND EXISTS(SELECT 1 FROM surface_push_operator_operations WHERE operation_id=? AND claim_id=? AND outcome='pending')
       AND EXISTS(SELECT 1 FROM surface_push_delegations WHERE id=? AND enrol_operation_id=? AND scope_digest=? AND revoked_at IS NULL)`)
      .bind(delegation.delegation_id, credential.id, credential.token_hash, credential.ha_install_id,
-      receipt.operation_id, originalReceipt, original.pair_binding, row.consent_revision, requestHash, scope,
+      receipt.operation_id, receipt.operation_id, originalReceipt, original.pair_binding, row.consent_revision, requestHash, scope,
       ...initialValues, delegation.operation_id, claim, delegation.delegation_id, delegation.operation_id, scope),
     db.prepare(`UPDATE surface_push_operator_operations SET outcome=CASE WHEN EXISTS(
      SELECT 1 FROM native_installation_surface_bindings n JOIN native_installation_live_delegations d ON d.id=n.delegation_id

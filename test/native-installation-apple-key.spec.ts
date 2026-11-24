@@ -12,8 +12,11 @@ import { createWidgetFirstKeyHandler } from "../src/native-push/first-key-servic
 import { firstKeyRegisterBytes, installationFirstKeyAudience, type FirstKeyChallenge } from "../src/native-push/first-key-wire";
 const db = env.DB, origin = "https://api.djconnect.dev", prefix = "/v1/push/native/key/";
 beforeAll(async () => {
- for (const sql of (credentials + native + apple).replace(/^--.*$/gm, "").split(";").map(s => s.trim()).filter(Boolean))
+ const schema=credentials+native+apple;
+ const triggers=schema.match(/CREATE TRIGGER[\s\S]*?END;/g)??[];
+ for (const sql of schema.replace(/CREATE TRIGGER[\s\S]*?END;/g, "").replace(/^--.*$/gm, "").split(";").map(s => s.trim()).filter(Boolean))
   await db.prepare(sql).run();
+ for(const sql of triggers)await db.prepare(sql).run();
 });
 beforeEach(async () => {
  for (const table of ["native_installation_first_key", "native_installation_key_retirements", "install_tokens"])

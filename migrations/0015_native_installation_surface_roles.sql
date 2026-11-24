@@ -5,6 +5,7 @@ CREATE TABLE native_installation_surface_bindings (
  credential_hash TEXT NOT NULL,
  ha_install_id TEXT NOT NULL,
  native_operation_id TEXT NOT NULL,
+ publication_operation_id TEXT NOT NULL,
  native_receipt_json TEXT NOT NULL,
  pair_binding TEXT NOT NULL,
  consent_revision INTEGER NOT NULL CHECK(consent_revision>0),
@@ -22,7 +23,7 @@ CREATE VIEW native_installation_live_delegations AS
  JOIN native_installation_first_key k ON k.credential_id=n.credential_id
   AND k.operation_id=n.native_operation_id AND k.receipt=n.native_receipt_json AND k.retired=0
  JOIN native_installation_pair_publications p ON p.credential_id=n.credential_id
-  AND p.operation_id=n.native_operation_id AND p.pair_binding=n.pair_binding
+  AND p.operation_id=n.publication_operation_id AND p.pair_binding=n.pair_binding
   AND p.consent_revision=n.consent_revision
   AND json_extract(k.original_request,'$.pairing_generation')=p.pairing_generation
   AND json_extract(k.original_request,'$.pair_binding')=p.pair_binding
@@ -83,11 +84,11 @@ CREATE TRIGGER native_surface_key_deleted AFTER DELETE ON native_installation_fi
 END;
 CREATE TRIGGER native_surface_publication_changed AFTER UPDATE ON native_installation_pair_publications BEGIN
  UPDATE surface_push_delegations SET revoked_at=COALESCE(revoked_at,CAST(unixepoch('subsec')*1000 AS INTEGER))
- WHERE id IN(SELECT n.delegation_id FROM native_installation_surface_bindings n WHERE n.credential_id=OLD.credential_id AND n.native_operation_id=OLD.operation_id AND (NEW.pairing_generation<>OLD.pairing_generation OR NEW.pair_binding<>OLD.pair_binding OR NEW.owner_binding<>OLD.owner_binding OR NEW.device_binding<>OLD.device_binding OR NEW.core_key_thumbprint<>OLD.core_key_thumbprint OR NEW.request_expires_at_ms<>OLD.request_expires_at_ms OR NEW.consent_revision<>OLD.consent_revision));
+ WHERE id IN(SELECT n.delegation_id FROM native_installation_surface_bindings n WHERE n.credential_id=OLD.credential_id AND n.publication_operation_id=OLD.operation_id AND (NEW.pairing_generation<>OLD.pairing_generation OR NEW.pair_binding<>OLD.pair_binding OR NEW.owner_binding<>OLD.owner_binding OR NEW.device_binding<>OLD.device_binding OR NEW.core_key_thumbprint<>OLD.core_key_thumbprint OR NEW.request_expires_at_ms<>OLD.request_expires_at_ms OR NEW.consent_revision<>OLD.consent_revision));
 END;
 CREATE TRIGGER native_surface_publication_deleted AFTER DELETE ON native_installation_pair_publications BEGIN
  UPDATE surface_push_delegations SET revoked_at=COALESCE(revoked_at,CAST(unixepoch('subsec')*1000 AS INTEGER))
- WHERE id IN(SELECT n.delegation_id FROM native_installation_surface_bindings n WHERE n.credential_id=OLD.credential_id AND n.native_operation_id=OLD.operation_id);
+ WHERE id IN(SELECT n.delegation_id FROM native_installation_surface_bindings n WHERE n.credential_id=OLD.credential_id AND n.publication_operation_id=OLD.operation_id);
 END;
 
 CREATE VIEW native_installation_historical_capabilities AS

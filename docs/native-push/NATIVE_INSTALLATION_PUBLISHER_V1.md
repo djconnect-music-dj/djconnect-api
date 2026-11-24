@@ -263,8 +263,10 @@ job/principal remains separate from this role's own actual SQL authority.
 The private once claim is acquired before cryptographic awaits. Actual counter
 CAS, exact new publication/consent/pair/credential guards, native provenance and
 new immutable role insertion commit together. Only that winning execution gets
-a new role ACK with the same fields as original issuer/enrol, bound to the new
-publication and exact signed declaration. Its expiry is the actual declared
+a new role ACK with all original issuer/enrol fields plus
+`publication_operation_id` and `reauthorization_challenge_id`, bound to the new
+publication and exact signed declaration. `native_operation_id` continues to
+identify the original genuine first-key ACK, never the new publication. Its expiry is the actual declared
 role grant bounded by the actual original source/consent/native evidence/policy;
 no first-key nonce or existing role is extended. Unknown/replayed/status,
 reentrant credential rotation, opt-out, bad proof and stale counters cannot

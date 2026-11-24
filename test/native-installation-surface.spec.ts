@@ -1,5 +1,7 @@
 /** Real Worker/D1/P256 role tests. Native registered-key rows below are declared
  * synthetic storage-boundary fixtures, not Apple evidence or device admission. */
+import cbor from "cbor";
+import * as pki from "pkijs";
 import { env } from "cloudflare:test";
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import m1 from "../migrations/0001_initial.sql?raw";
@@ -17,6 +19,9 @@ import m12 from "../migrations/0012_watch_lifecycle.sql?raw";
 import m13 from "../migrations/0013_push_registration_erasure.sql?raw";
 import m14 from "../migrations/0014_native_installation_publisher.sql?raw";
 import m15 from "../migrations/0015_native_installation_surface_roles.sql?raw";
+import m16 from "../migrations/0016_native_installation_apple_key.sql?raw";
+import m17 from "../migrations/0017_native_installation_role_challenges.sql?raw";
+import {createInstallationReauthorization,reauthorizationPrefix,reauthorizationSigningBytes} from "../src/native-push/installation-reauthorization";
 import { issueInstallToken } from "../src/repositories/installTokens";
 import { base64Encode, base64Url } from "../src/crypto";
 import { canonical } from "../src/surface-push/wire";
@@ -89,7 +94,7 @@ function coordinate(value: ReturnType<typeof registration>) {
  return { contract_version, registration_id, generation, revision, binding_id, device_binding, owner_binding, operation_id: op() };
 }
 beforeAll(async () => {
- for (const schema of [m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14,m15]) {
+ for (const schema of [m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14,m15,m16,m17]) {
   const triggers = schema.match(/CREATE TRIGGER[\s\S]*?END;/g) ?? [];
   const plain = schema.replace(/CREATE TRIGGER[\s\S]*?END;/g, "").replace(/^--.*$/gm, "");
   for (const sql of plain.split(";").map(s => s.trim()).filter(Boolean)) await db.prepare(sql).run();
@@ -103,7 +108,7 @@ beforeAll(async () => {
 });
 afterEach(() => vi.restoreAllMocks());
 beforeEach(async () => {
- for (const table of ["native_installation_surface_bindings","surface_push_targets","surface_push_operations",
+ for (const table of ["native_installation_role_challenges","native_installation_surface_bindings","surface_push_targets","surface_push_operations",
  "surface_push_issuer_operations","surface_push_capabilities","surface_push_delegations","surface_push_operator_operations",
  "native_installation_first_key","native_installation_pair_publications","native_installation_consent_withdrawals",
  "native_installation_key_retirements","native_installation_key_decisions","install_tokens"]) await db.prepare("DELETE FROM " + table).run();
@@ -128,6 +133,13 @@ beforeEach(async () => {
    key_spki,transcript_sha256,receipt) VALUES(?,?,?,?,?,?,?,?,?,?,?)`).bind(credential.id, pub.operation_id,
   receipt.api_installation_id, installationNativePolicy.id, pub.pair_binding, canonical(original), "{}", pub.request_expires_at_ms,
   base64Encode(new Uint8Array(spki)), receipt.transcript_sha256, canonical(receipt)).run();
+ // Explicit synthetic saved-verifier metadata for the initial-role boundary.
+ await db.prepare(`UPDATE native_installation_first_key SET apple_key_id_b64=?,apple_public_key_spki_b64=?,
+  apple_assertion_policy_json=?,apple_counter=0,apple_evidence_expires_at_ms=?,apple_status_expires_at_ms=?`)
+  .bind(base64Encode(new Uint8Array(32)),base64Encode(new Uint8Array(spki)),
+   canonical({profile:"host_wake_apple_assertion_properties_v2",app_identifier:installationNativePolicy.apple.app_identifier,
+    bundle_version:installationNativePolicy.apple.bundle_version,launch_validation_category_b64:"AwAAAA=="}),
+   Date.now()+240000,Date.now()+240000).run();
  const jwk = await crypto.subtle.exportKey("jwk", key.publicKey) as JsonWebKey;
  declaration = { contract_version: 1, purpose: "surface_push", action: "enrol", operation_id: op(),
   delegation_id: "fixture-delegation", expected_revision: 0, approval_reference: String(receipt.registry_generation),
@@ -261,4 +273,147 @@ it("credential withdrawal during native role signature verification cannot publi
  expect(result.status).toBeGreaterThanOrEqual(400);
  expect(await db.prepare("SELECT count(*) FROM native_installation_surface_bindings").first("count(*)")).toBe(0);
  expect(await db.prepare("SELECT count(*) FROM native_installation_live_delegations").first("count(*)")).toBe(0);
+});
+
+async function reauthorizationPrepared() {
+ await enrolled();
+ const apple = await crypto.subtle.generateKey({name:"ECDSA",namedCurve:"P-256"},true,["sign","verify"]) as CryptoKeyPair;
+ const applePoint = await crypto.subtle.exportKey("raw",apple.publicKey);
+ const appleID = base64Encode(new Uint8Array(await crypto.subtle.digest("SHA-256",applePoint)));
+ // Explicit synthetic saved-verifier metadata boundary. This test produces
+ // actual ECDSA assertions and SQL counters, never actual Apple enrollment.
+ await db.prepare(`UPDATE native_installation_first_key SET apple_key_id_b64=?,apple_public_key_spki_b64=?,
+  apple_assertion_policy_json=?,apple_counter=0,apple_evidence_expires_at_ms=?,apple_status_expires_at_ms=?`)
+  .bind(appleID,base64Encode(new Uint8Array(await crypto.subtle.exportKey("spki",apple.publicKey))),
+   canonical({profile:"host_wake_apple_assertion_properties_v2",app_identifier:installationNativePolicy.apple.app_identifier,
+    bundle_version:installationNativePolicy.apple.bundle_version,launch_validation_category_b64:"AwAAAA=="}),
+   Date.now()+240000,Date.now()+240000).run();
+ const publisher=createInstallationPublisher(db,origin,()=>true);
+ expect((await publisher(post("/v1/push/native/installation/publisher/withdraw",
+  {contract_version:1,pair_binding:original.pair_binding,consent_revision:2},credential.token))).status).toBe(200);
+ const publication={...original,install_credential_id:credential.id,operation_id:"new-consent-original",
+  request_expires_at_ms:Date.now()+120000,consent_revision:3};
+ expect((await publisher(post("/v1/push/native/installation/publisher/operation",publication,credential.token))).status).toBe(200);
+ const next={...declaration,operation_id:op(),delegation_id:"reauthorized-widget-role"};
+ const signature=base64Url(await crypto.subtle.sign({name:"ECDSA",hash:"SHA-256"},key.privateKey,
+  reauthorizationSigningBytes("challenge",receipt,publication.operation_id,next)));
+ const handler=createInstallationReauthorization(config,()=>true);
+ const challengeResponse=await handler(post(reauthorizationPrefix+"challenge",{contract_version:1,first_key_receipt:receipt,
+  publication_operation_id:publication.operation_id,delegation:next,signature},credential.token));
+ const challenge=await challengeResponse.json() as Record<string,unknown>;
+ expect(challengeResponse.status,JSON.stringify(challenge)).toBe(200);
+ async function assertion(counter=1,selectedChallenge=challenge,selectedDelegation=next) {
+  const props=cbor.encode(new Map<string,unknown>([["apple_bundle_version_01",installationNativePolicy.apple.bundle_version],
+   ["apple_validation_category_01",Buffer.from([3,0,0,0])]]));
+  const auth=new Uint8Array(37+props.length);
+  auth.set(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(installationNativePolicy.apple.app_identifier))));
+  auth[32]=0xc0;new DataView(auth.buffer).setUint32(33,counter,false);auth.set(props,37);
+  const clientHash=new Uint8Array(await crypto.subtle.digest("SHA-256",reauthorizationSigningBytes("register",receipt,selectedChallenge,selectedDelegation)));
+  const combined=new Uint8Array(auth.length+clientHash.length);combined.set(auth);combined.set(clientHash,auth.length);
+  const nonce=await crypto.subtle.digest("SHA-256",combined);
+  const raw=await crypto.subtle.sign({name:"ECDSA",hash:"SHA-256"},apple.privateKey,nonce);
+  const proof=base64Encode(new Uint8Array(cbor.encode(new Map([["signature",Buffer.from(pki.createCMSECDSASignature(raw))],
+   ["authenticatorData",Buffer.from(auth)]]))));
+  return {contract_version:1,challenge:selectedChallenge,first_key_receipt:receipt,delegation:selectedDelegation,
+   apple_proof:{kind:"assertion",key_id_b64:appleID,proof_b64:proof}};
+ }
+ return {handler,challenge,next,assertion,publication};
+}
+it("ON/OFF/ON uses one real saved-key signature and counter CAS for a separate role without reopening first trust",async()=>{
+ const x=await reauthorizationPrepared(),body=await x.assertion();
+ const response=await x.handler(post(reauthorizationPrefix+"register",body,credential.token));
+ const ack=await response.json();
+ expect(response.status,JSON.stringify(ack)).toBe(200);
+ expect(ack).toMatchObject({success:true,replayed:false,native_operation_id:receipt.operation_id,
+  publication_operation_id:x.publication.operation_id,reauthorization_challenge_id:x.challenge.challenge_id,
+  delegation_id:x.next.delegation_id});
+ expect((ack as {enrolment_sha256:string}).enrolment_sha256).toBe(await bytesHash(
+  reauthorizationSigningBytes("challenge",receipt,x.publication.operation_id,x.next).buffer));
+ expect(await db.prepare("SELECT count(*) FROM native_installation_first_key").first("count(*)")).toBe(1);
+ expect(await db.prepare("SELECT apple_counter FROM native_installation_first_key").first("apple_counter")).toBe(1);
+ expect(await db.prepare("SELECT count(*) FROM native_installation_live_delegations").first("count(*)")).toBe(1);
+ expect(await db.prepare("SELECT revoked_at FROM surface_push_delegations WHERE id=?").bind(declaration.delegation_id).first("revoked_at")).not.toBeNull();
+ expect((await x.handler(post(reauthorizationPrefix+"register",body,credential.token))).status).toBe(409);
+ const fetcher=vi.fn<typeof fetch>().mockResolvedValue(new Response(null,{status:200}));
+ const service=createInstallationSurfaceService({env:config,fetcher});
+ const challengeRequest=await signed("challenge",{delegation_id:x.next.delegation_id});
+ const payload=(await challengeRequest.clone().json() as {payload:Statement}).payload;
+ const issuedChallenge=await service(challengeRequest);
+ expect(issuedChallenge.status).toBe(200);
+ const c=await issuedChallenge.json() as {challenge_id:string;nonce:string;scope_digest:string};
+ const statement={...payload,action:"issue",challenge_id:c.challenge_id,nonce:c.nonce,scope_digest:c.scope_digest} as Statement;
+ const purpose=await service(post(ISSUER_PREFIX+"issue",{payload:statement,signature:base64Url(await crypto.subtle.sign(
+  {name:"ECDSA",hash:"SHA-256"},key.privateKey,signingBytes(ISSUER_PREFIX+"issue",statement)))}));
+ expect(purpose.status).toBe(200);
+ const {credential:bearer}=await purpose.json() as {credential:string},value=registration();
+ expect((await service(post("/v1/push/surface/register",value,bearer))).status).toBe(200);
+ expect((await service(post("/v1/push/surface/event",{...coordinate(value),event:"widget_reload"},bearer))).status).toBe(200);
+ expect(fetcher).toHaveBeenCalledTimes(1);
+});
+it.each(["withdraw","rotate","retire"])("reauthorization cannot win after actual %s during assertion verification",async closure=>{
+ const x=await reauthorizationPrepared(),body=await x.assertion();
+ const verify=crypto.subtle.verify.bind(crypto.subtle);
+ vi.spyOn(crypto.subtle,"verify").mockImplementation(async(...args)=>{
+  if(closure==="withdraw") await createInstallationPublisher(db,origin,()=>true)(post("/v1/push/native/installation/publisher/withdraw",
+   {contract_version:1,pair_binding:original.pair_binding,consent_revision:4},credential.token));
+  else if(closure==="rotate") await db.prepare("UPDATE install_tokens SET disabled=1 WHERE id=?").bind(credential.id).run();
+  else await db.prepare("INSERT INTO native_installation_key_retirements(credential_id,pair_binding) VALUES(?,?)")
+   .bind(credential.id,original.pair_binding).run(); // Explicit same storage-boundary retired-pair fixture.
+  return verify(...args);
+ });
+ const result=await x.handler(post(reauthorizationPrefix+"register",body,credential.token));
+ expect(result.status).toBeGreaterThanOrEqual(400);
+ expect(await db.prepare("SELECT count(*) FROM native_installation_live_delegations").first("count(*)")).toBe(0);
+ expect(await db.prepare("SELECT apple_counter FROM native_installation_first_key").first("apple_counter")).toBe(0);
+ expect(await db.prepare("SELECT outcome FROM native_installation_role_challenges").first("outcome")).toBe("unknown");
+});
+it("stale assertion counters consume no native key and never reopen their claimed role challenge",async()=>{
+ const x=await reauthorizationPrepared();
+ expect((await x.handler(post(reauthorizationPrefix+"register",await x.assertion(0),credential.token))).status).toBe(403);
+ expect((await x.handler(post(reauthorizationPrefix+"register",await x.assertion(1),credential.token))).status).toBe(409);
+ expect(await db.prepare("SELECT apple_counter FROM native_installation_first_key").first("apple_counter")).toBe(0);
+});
+it("an original receipt without actual saved verifier metadata cannot reauthorize",async()=>{
+ const x=await reauthorizationPrepared();
+ await db.prepare("UPDATE native_installation_first_key SET apple_key_id_b64=NULL").run();
+ expect((await x.handler(post(reauthorizationPrefix+"register",await x.assertion(),credential.token))).status).toBe(403);
+ expect(await db.prepare("SELECT apple_counter FROM native_installation_first_key").first("apple_counter")).toBe(0);
+});
+it("two distinct actual role challenges sharing one native key serialize at its global actual counter CAS",async()=>{
+ const x=await reauthorizationPrepared();
+ const publication={...x.publication,operation_id:"second-consent-original",consent_revision:4};
+ expect((await createInstallationPublisher(db,origin,()=>true)(post("/v1/push/native/installation/publisher/operation",publication,credential.token))).status).toBe(200);
+ const next={...x.next,operation_id:op(),delegation_id:"competing-reauthorization"};
+ const signature=base64Url(await crypto.subtle.sign({name:"ECDSA",hash:"SHA-256"},key.privateKey,
+  reauthorizationSigningBytes("challenge",receipt,publication.operation_id,next)));
+ const response=await x.handler(post(reauthorizationPrefix+"challenge",{contract_version:1,first_key_receipt:receipt,
+  publication_operation_id:publication.operation_id,delegation:next,signature},credential.token));
+ expect(response.status).toBe(200);
+ const challenge=await response.json() as Record<string,unknown>;
+ const one=await x.assertion(1),two=await x.assertion(1,challenge,next);
+ const results=await Promise.all([x.handler(post(reauthorizationPrefix+"register",one,credential.token)),
+  x.handler(post(reauthorizationPrefix+"register",two,credential.token))]);
+ expect(results.map(result=>result.status).sort()).toEqual([200,409]);
+ expect(await db.prepare("SELECT apple_counter FROM native_installation_first_key").first("apple_counter")).toBe(1);
+ expect(await db.prepare("SELECT count(*) FROM native_installation_surface_bindings WHERE admission_kind='reauthorization'").first("count(*)")).toBe(1);
+});
+it("another genuine credential sharing an HA ID cannot consume or authorize the original native challenge",async()=>{
+ const x=await reauthorizationPrepared(),body=await x.assertion();
+ expect((await x.handler(post(reauthorizationPrefix+"register",body,other.token))).status).toBe(403);
+ expect(await db.prepare("SELECT outcome FROM native_installation_role_challenges").first("outcome")).toBe("pending");
+ expect((await x.handler(post(reauthorizationPrefix+"register",body,credential.token))).status).toBe(200);
+});
+it("a changed original declaration cannot consume the saved role challenge or substitute its target",async()=>{
+ const x=await reauthorizationPrepared(),body=await x.assertion();
+ const forged={...body,delegation:{...body.delegation,source_binding:"a".repeat(64)}};
+ expect((await x.handler(post(reauthorizationPrefix+"register",forged,credential.token))).status).toBe(409);
+ expect(await db.prepare("SELECT outcome FROM native_installation_role_challenges").first("outcome")).toBe("pending");
+ expect((await x.handler(post(reauthorizationPrefix+"register",body,credential.token))).status).toBe(200);
+});
+it("initial role cannot promote an old receipt missing genuine native metadata or overrun its actual evidence deadline",async()=>{
+ await db.prepare("UPDATE native_installation_first_key SET apple_status_expires_at_ms=?").bind(Date.now()+30000).run();
+ expect((await createInstallationSurfaceEnrol(config,()=>true)(post(installationEnrolPath,await enrolBody(),credential.token))).status).toBe(403);
+ await db.prepare("UPDATE native_installation_first_key SET apple_status_expires_at_ms=?,apple_key_id_b64=NULL").bind(Date.now()+240000).run();
+ expect((await createInstallationSurfaceEnrol(config,()=>true)(post(installationEnrolPath,await enrolBody(),credential.token))).status).toBe(403);
+ expect(await db.prepare("SELECT count(*) FROM native_installation_surface_bindings").first("count(*)")).toBe(0);
 });
