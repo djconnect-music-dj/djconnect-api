@@ -4,17 +4,16 @@ Repository-local navigation; platform roadmap remains Core-owned.
 
 ## Reconciled predecessor
 
-[API #276](https://github.com/djconnect-music-dj/djconnect-api/pull/276) merged at `41059bd7357fcf0a0f8676065cf90d902504a235`. Its source tree equals reviewed candidate `fba1cd13cb8b0b569b4d9e840222f91eefa7cbeb` (tree `58d3861c4c4846e4af77f8175e411b4f86686e13`). This separate governance increment reconciles that implementation; it does not authorize deployment or native activation.
+[API #275](https://github.com/djconnect-music-dj/djconnect-api/pull/275) merged exact reviewed `90857f248ae1e0947a5a1c99ec0b22e4c75350e9` at `14984f5a084917d7b33d0a87735a9cbf4fdef49a`. Their trees are identical. It adds 16 actual local Worker/D1 authority-boundary regressions and ownership documentation; no Worker runtime, routes, permissions, bindings or migrations change.
 
 At this Finalization's freeze point, the source predecessor remains `MERGED_UNRECONCILED`. **Prospective target only:** `MERGED_RECONCILED` becomes effective only after this separate Finalization's protected merge and its own exact-main CI and automatic internal publication PASS. No own-main qualification of this Finalization is claimed here.
 
 ## Execution Horizon
 
-1. Requalify the existing guest-boundary PR #275 against reconciled main; no merge approval is assumed.
-2. Review the separate native Watch adoption branch and preserve its independent channel scopes.
-3. Join genuine paired-device consent, issuer custody and background-read authority before any native push activation.
+1. Deliver separately approved original Watch adoption PR #278, with fresh current-main checks and its own Finalization.
+2. Review installation-owned native Widget enrollment/reauthorization PR #279; no merge approval is assumed.
+3. Qualify actual Apple SDK/key, scoped channel consent, clock, target and device delivery before any native push acceptance.
 
-## Immutable history
+Source, internal publication, deployment and physical/native acceptance remain separate. Historical proof files are unchanged. All 22 historical operational gates remain OPEN.
 
-- [Earlier governance adoption](docs/history/prompts/2026-07-15-rg-api-001.md) remains unchanged.
-- [Canonical workflow repair Finalization](docs/history/prompts/2026-11-23-api-canonical-ci-pins-finalization.md) records this reconciliation.
+[Immutable source reconciliation](docs/history/prompts/2026-11-24-api-native-guest-boundary-finalization.md) and [machine evidence](docs/rendezvous/api-native-guest-boundary-finalization-20261124.json) preserve exact own-main results.
