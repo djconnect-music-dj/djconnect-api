@@ -214,3 +214,58 @@ all retained operation references have their exact genuine withdrawal and
 retirement ACKs, with the original pair retired. Missing, mismatched, pending
 or unknown rows remain. Grouping removes duplicate private tokens for repeated
 operations without discarding their original proofs or minting any authority.
+
+
+## Genuine Widget reauthorization — 24 November 2026
+
+ON/OFF/ON does not repeat or reopen first trust. The original registered native
+key remains unique for its original pair; permanent pair retirement is final.
+The production first-key writer must retain the actual Apple verifier's key ID,
+SPKI, zero counter, verified policy/category and evidence deadline atomically
+with its winning native ACK. A boolean, fixture, old receipt/status or caller
+key cannot produce this enrollment metadata. Original proof deadlines and the
+selected signed-build policy remain upper bounds; assertions do not establish
+a newly installed build.
+
+The new own-principal role reauthorization paths are
+`POST /v1/push/native/installation/issuer/reauthorize/challenge` and
+`POST /v1/push/native/installation/issuer/reauthorize/register`.
+They use the actual active installation bearer, not CF/operator authority.
+Challenge input is exactly `{contract_version:1, first_key_receipt,
+publication_operation_id, delegation, signature}`. Its raw P-256 signature is
+over canonical JSON `["djc-installation-widget-reauthorization/1", "POST",
+"/v1/push/native/installation/issuer/reauthorize/challenge",
+first_key_receipt, publication_operation_id, delegation]`. The real original
+Core key, exact original native ACK and a newly current original publication
+with the same original pair/key context and current unwithdrawn consent revision
+are required. Reauthorization after opt-out requires a strictly newer actual
+consent revision. Existing immutable delegation IDs/once-issuance rules remain.
+
+The server returns one fresh, once-only 32-byte nonce with a 120-second maximum
+challenge deadline, bounded further by original current publication, selected
+policy and actual verified native-key evidence. Its exact challenge object has
+`contract_version:1`, `api_audience:"djc-native-push/1"`, `challenge_id`,
+`challenge_nonce`, `expires_at_ms`, `publication_operation_id`,
+`first_key_receipt_sha256` and `delegation_sha256`. Hashes compare exact saved
+DATA; none is a substitute for original cryptographic authority.
+
+Register input is exactly `{contract_version:1, challenge, first_key_receipt,
+delegation, apple_proof:{kind:"assertion",key_id_b64,proof_b64}}`.
+Apple App Attest receives SHA-256 of canonical UTF-8 JSON
+`["djc-installation-widget-reauthorization/1", "POST",
+"/v1/push/native/installation/issuer/reauthorize/register", challenge,
+first_key_receipt, delegation]` as its clientDataHash. The server verifies the
+actual fresh assertion with the originally enrolled actual Apple key, RP,
+selected properties/category and a strictly increasing global per-key counter.
+The existing assertion cryptographic kernel is shared; its existing HostWake
+job/principal remains separate from this role's own actual SQL authority.
+
+The private once claim is acquired before cryptographic awaits. Actual counter
+CAS, exact new publication/consent/pair/credential guards, native provenance and
+new immutable role insertion commit together. Only that winning execution gets
+a new role ACK with the same fields as original issuer/enrol, bound to the new
+publication and exact signed declaration. Its expiry is the actual declared
+role grant bounded by the actual original source/consent/native evidence/policy;
+no first-key nonce or existing role is extended. Unknown/replayed/status,
+reentrant credential rotation, opt-out, bad proof and stale counters cannot
+issue a new ACK, restore a consumed challenge or resurrect an old role.

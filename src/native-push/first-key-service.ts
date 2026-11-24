@@ -1,6 +1,7 @@
 import { base64Encode, base64Url } from "../crypto";
 import { findInstallTokenByBearer } from "../repositories/installTokens";
 import { canonical, need, parseStrictJson, SurfaceError } from "../surface-push/wire";
+import { consumeFirstKeyApple, type VerifiedFirstKeyApple } from "./first-key-apple";
 import {
 	firstKeyAudience, installationFirstKeyAudience, firstKeyRegisterBytes, firstKeyStatusBytes,
 	type FirstKeyAudience,
@@ -81,7 +82,7 @@ export interface WidgetFirstKeyPolicy {
 	/** Trusted server SQL and bound coordinates for the same-statement authority check. */
 	pairSqlGuard?(credentialId: string, original: Readonly<Original>): PairSqlGuard;
 	verifyApple(attestation: Uint8Array<ArrayBuffer>, keyId: string, transcript: Uint8Array<ArrayBuffer>,
-		expiresAt: number, signal: AbortSignal): Promise<boolean>;
+		expiresAt: number, signal: AbortSignal): Promise<boolean | VerifiedFirstKeyApple>;
 }
 
 function fields(value: unknown, keys: readonly string[]): asserts value is Json {
@@ -268,8 +269,11 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 		const hash = await digest(bytes);
 		await checkPair(credential, original);
 		await currentness(original, challenge.expires_at_ms);
-		need(await checkWorker().verifyApple(attestation, proof.key_id_b64, bytes, challenge.expires_at_ms, signal),
+		const verifiedApple = await checkWorker().verifyApple(attestation, proof.key_id_b64, bytes, challenge.expires_at_ms, signal);
+		need(verifiedApple,
 			"widget_first_key_proof_rejected", 403);
+		const actualApple = production ? consumeFirstKeyApple(verifiedApple, bytes, proof.key_id_b64) : null;
+		need(!production || actualApple, "widget_first_key_proof_rejected", 403);
 		await checkPair(credential, original);
 		const decisionExpiry = await currentness(original, challenge.expires_at_ms);
 		const guard = pairSqlGuard(credential, original);
@@ -281,9 +285,12 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 			transcript_sha256: hex(hash), expires_at_ms: challenge.expires_at_ms, state: "registered",
 		};
 		const result = await db.prepare(`UPDATE ${keysTable} SET key_spki = ?, transcript_sha256 = ?, receipt = ?
+            ${production ? ",apple_key_id_b64=?,apple_public_key_spki_b64=?,apple_assertion_policy_json=?,apple_evidence_expires_at_ms=?,apple_status_expires_at_ms=?,apple_counter=0" : ""}
 			WHERE ${activeRow} AND challenge = ? AND receipt IS NULL AND ? > ${databaseNowMs}
 			AND NOT EXISTS (SELECT 1 FROM ${keysTable} WHERE ${production ? "credential_id = ? AND " : ""}pair_binding = ? AND receipt IS NOT NULL) AND ${guard.sql}
 			RETURNING receipt`).bind(input.core_public_key_spki_b64, receipt.transcript_sha256, canonical(receipt),
+            ...(production ? [actualApple!.key_id_b64, actualApple!.public_key_spki_b64, actualApple!.policy_json,
+                actualApple!.evidence_expires_at_ms, actualApple!.status_expires_at_ms] : []),
 			...activeValues(credential, original.operation_id), saved.challenge, decisionExpiry, ...(production ? [credential.id] : []), original.pair_binding,
 			...guard.values).first<{ receipt: string }>();
 		need(result, conflict, 409);
