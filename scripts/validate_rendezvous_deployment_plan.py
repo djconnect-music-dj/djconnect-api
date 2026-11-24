@@ -1407,6 +1407,7 @@ def ack_bounds_delta():
 
 
 def ack_previous_bytes(name, raw):
+    raw = unique_previous_bytes(name, raw)
     if name not in ACK_BOUNDS_CHANGES | ACK_BOUNDS_REFERENCE_CHANGES:
         return raw
     import base64
@@ -1421,11 +1422,69 @@ def ack_installation_delta(sources, references):
     require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
     for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
         for name, change in changes.items():
-            require(target[name] == change['before'] and digest(safe_path(name).read_bytes()) == change['after'])
+            require(target[name] == change['before'] and digest(unique_previous_bytes(name, safe_path(name).read_bytes())) == change['after'])
             target[name] = change['after']
     require(source_map_digest(sources) == delta['effective_source_map_sha256']
         == SOURCE_PROVENANCE['native_ack_key_bounds_source_map_sha256'])
     references[ACK_BOUNDS_DELTA_PATH] = ACK_BOUNDS_DELTA_SHA256
+    return sources, references
+
+
+UNIQUE_APPLE_DELTA_PATH = 'docs/rendezvous/native-apple-identity-uniqueness-source-delta-v1.json'
+UNIQUE_APPLE_DELTA_SHA256 = '4df2a69f62d2ee0d69ad318bbefc4117b965c8c10ef2c5aca21e9ae3449a08c6'
+UNIQUE_APPLE_CHANGES = frozenset(('src/native-push/first-key-service.ts',))
+UNIQUE_APPLE_ADDITIONS = frozenset(('migrations/0018_native_installation_unique_apple_identity.sql',))
+UNIQUE_APPLE_REFERENCE_CHANGES = NATIVE_WIDGET_REFERENCE_ADDITIONS
+SOURCE_PROVENANCE.update(native_apple_identity_uniqueness_delta_sha256=UNIQUE_APPLE_DELTA_SHA256,
+    native_apple_identity_uniqueness_source_map_sha256='897192620a65d85e209d37f2717e19514f468ccad203fe70d94261970086971a')
+
+
+def unique_apple_delta():
+    delta = pinned_working_proof(UNIQUE_APPLE_DELTA_PATH, UNIQUE_APPLE_DELTA_SHA256)
+    require(set(delta) == {'schema_version', 'scope', 'base_source', 'qualified_product_source',
+        'baseline_source_map_sha256', 'effective_source_map_sha256', 'changes', 'additions', 'reference_changes',
+        'prior_bytes_b64', 'legacy_public_activation_allowed', 'device_acceptance', 'production_effect_authorized'})
+    require(type(delta['schema_version']) is int and delta['schema_version'] == 1
+        and delta['scope'] == 'EXACT_REGISTERED_APPLE_KEY_UNIQUENESS_NOT_AUTHORITY'
+        and delta['base_source'] == '0e70921a4d96f24466c8eeabf22af05d2e4e5b10'
+        and delta['qualified_product_source'] == '6d28012f2dc67bf46f327ff0a699f1dcce38d3d6'
+        and delta['baseline_source_map_sha256'] == SOURCE_PROVENANCE['native_ack_key_bounds_source_map_sha256']
+        and delta['legacy_public_activation_allowed'] is False and delta['device_acceptance'] is False
+        and delta['production_effect_authorized'] is False
+        and set(delta['changes']) == UNIQUE_APPLE_CHANGES and set(delta['additions']) == UNIQUE_APPLE_ADDITIONS
+        and set(delta['reference_changes']) == UNIQUE_APPLE_REFERENCE_CHANGES
+        and set(delta['prior_bytes_b64']) == UNIQUE_APPLE_CHANGES | UNIQUE_APPLE_REFERENCE_CHANGES)
+    import base64
+    for name, change in {**delta['changes'], **delta['reference_changes']}.items():
+        require(set(change) == {'before', 'after'} and change['before'] != change['after'])
+        raw = base64.b64decode(delta['prior_bytes_b64'][name], validate=True)
+        require(digest(raw) == change['before'] and base64.b64encode(raw).decode() == delta['prior_bytes_b64'][name])
+    return delta
+
+
+def unique_previous_bytes(name, raw):
+    if name not in UNIQUE_APPLE_CHANGES | UNIQUE_APPLE_REFERENCE_CHANGES:
+        return raw
+    import base64
+    delta = unique_apple_delta()
+    change = delta['changes'].get(name) or delta['reference_changes'][name]
+    require(digest(raw) == change['after'])
+    return base64.b64decode(delta['prior_bytes_b64'][name], validate=True)
+
+
+def unique_installation_delta(sources, references):
+    delta = unique_apple_delta()
+    require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
+    for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
+        for name, change in changes.items():
+            require(target[name] == change['before'] and digest(safe_path(name).read_bytes()) == change['after'])
+            target[name] = change['after']
+    for name, pin in delta['additions'].items():
+        require(name not in sources and digest(safe_path(name).read_bytes()) == pin)
+        sources[name] = pin
+    require(source_map_digest(sources) == delta['effective_source_map_sha256']
+        == SOURCE_PROVENANCE['native_apple_identity_uniqueness_source_map_sha256'])
+    references[UNIQUE_APPLE_DELTA_PATH] = UNIQUE_APPLE_DELTA_SHA256
     return sources, references
 
 
@@ -1694,7 +1753,7 @@ def baseline():
                 require(target[name] == change['before'])
                 target[name] = change['after']
     refs[CANONICAL_PIN_DELTA_PATH] = CANONICAL_PIN_DELTA_SHA256
-    return ack_installation_delta(*counter_installation_delta(*native_installation_delta(sources, refs)))
+    return unique_installation_delta(*ack_installation_delta(*counter_installation_delta(*native_installation_delta(sources, refs))))
 
 
 def validate(plan):
