@@ -1,0 +1,7 @@
+# API official browser APT profile Finalization
+
+[API #282](https://github.com/djconnect-music-dj/djconnect-api/pull/282) merged reviewed `97c71709f130a831d5d33d0e1b65661b62becbea` at `c947e47926154429a120a5385b6640676459275b` with identical trees. Its exact three-file delta supports only the two official GitHub cloud mirror profiles. Seven strict cases cover Azure/AWS plus unknown/mixed/priority failures; probe, retry, acquire deadline and signed APT behavior remain unchanged. No Worker runtime, native gate, route, migration or credential changes.
+
+The owner explicitly approved this source and mandatory separate Finalization. The central org-app authorization ran https://github.com/djconnect-music-dj/djconnect/actions/runs/45365811749; all 61 candidate checks passed with one intentional skip. Source main has 23 successful workflows, a qualified exact Worker release artifact and independently read-back automatic internal release/durable evidence. The machine record retains source hashes, artifact verification and formal/durable integrity.
+
+This separate governance increment updates the four rolling records to the same predecessor and horizon. Reconciliation is prospective until its own protected merge, own-main CI and automatic publication. This document does not deploy API, admit native push, or establish Apple/provider/device acceptance. The original source278 failure stays retained22/23; current fixed-source/browser qualification does not relabel that execution. Native Widget PR #279 remains separate.
