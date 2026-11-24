@@ -424,3 +424,30 @@ it.each([0.5,-1,4294967296,"invalid-counter"])("corrupt saved counter %s remains
  expect(await db.prepare("SELECT apple_counter FROM native_installation_first_key").first("apple_counter")).toBe(corrupted);
  expect(await db.prepare("SELECT count(*) FROM native_installation_surface_bindings WHERE admission_kind='reauthorization'").first("count(*)")).toBe(0);
 });
+
+it("MODEL historical40532 storage cannot become a new40533 initial role",async()=>{
+ await db.prepare("UPDATE native_installation_first_key SET policy_id=?,apple_assertion_policy_json=?")
+  .bind("ios-native-push-development-40532/1",canonical({profile:"host_wake_apple_assertion_properties_v2",
+   app_identifier:installationNativePolicy.apple.app_identifier,bundle_version:"40532",
+   launch_validation_category_b64:"AwAAAA=="})).run();
+ const response=await createInstallationSurfaceEnrol(config,()=>true)(post(installationEnrolPath,await enrolBody(),credential.token));
+ expect(response.status).toBe(403);
+ expect(await db.prepare("SELECT count(*) FROM native_installation_surface_bindings").first("count(*)")).toBe(0);
+ expect(await db.prepare("SELECT policy_id FROM native_installation_first_key").first("policy_id")).toBe("ios-native-push-development-40532/1");
+});
+it("MODEL historical40532 key stays closed on fresh-consent reauthorization without counter/key relabel",async()=>{
+ await db.prepare("UPDATE native_installation_first_key SET policy_id=?").bind("ios-native-push-development-40532/1").run();
+ const publication={...original,install_credential_id:credential.id,operation_id:"old-policy-new-consent",
+  request_expires_at_ms:Date.now()+120000,consent_revision:3};
+ const publisher=createInstallationPublisher(db,origin,()=>true);
+ expect((await publisher(post("/v1/push/native/installation/publisher/operation",publication,credential.token))).status).toBe(200);
+ const next={...declaration,operation_id:op(),delegation_id:"old-policy-must-not-upgrade"};
+ const signature=base64Url(await crypto.subtle.sign({name:"ECDSA",hash:"SHA-256"},key.privateKey,
+  reauthorizationSigningBytes("challenge",receipt,publication.operation_id,next)));
+ const response=await createInstallationReauthorization(config,()=>true)(post(reauthorizationPrefix+"challenge",
+  {contract_version:1,first_key_receipt:receipt,publication_operation_id:publication.operation_id,delegation:next,signature},credential.token));
+ expect(response.status).toBe(403);
+ const row=await db.prepare("SELECT policy_id,apple_counter FROM native_installation_first_key").first<{policy_id:string;apple_counter:number}>();
+ expect(row).toEqual({policy_id:"ios-native-push-development-40532/1",apple_counter:0});
+ expect(await db.prepare("SELECT count(*) FROM native_installation_surface_bindings").first("count(*)")).toBe(0);
+});

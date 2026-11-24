@@ -1,3 +1,5 @@
+import { installationNativePolicy } from "./installation-policy";
+import { canonical } from "../surface-push/wire";
 import type { NativeAppleEvidencePolicy } from "../../coordinator/host-app-wake-receiving/native-apple-evidence.mjs";
 import { createWidgetFirstKeyAppleVerifier } from "./first-key-apple";
 import { createWidgetFirstKeyHandler, createWidgetFirstKeyRetirementHandler, type WidgetFirstKeyPolicy } from "./first-key-service";
@@ -40,7 +42,9 @@ export function createInstallationFirstKey(db: D1Database, origin: string, curre
        event.core_key_thumbprint, event.request_expires_at_ms] };
     }, "installation")(request);
    }
-   if (!selected || selected.id !== "ios-native-push-development-40532/1" ||
+   if (!selected || selected.id !== "ios-native-push-development-40533/1" ||
+       selected.expiresAt !== installationNativePolicy.expiresAt ||
+       canonical(selected.apple) !== canonical(installationNativePolicy.apple) ||
        !Number.isSafeInteger(selected.expiresAt) || Date.now() >= selected.expiresAt || !current())
     throw new SurfaceError(503, "native_first_key_policy_unavailable");
    const credential = await authenticateInstallation(request, db, current);

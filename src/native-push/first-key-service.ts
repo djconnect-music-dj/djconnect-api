@@ -211,7 +211,7 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 	const conflict = "widget_first_key_conflict";
 
 	const checkWorker = () => {
-		need(policy && (id(policyId) || production && policyId === "ios-native-push-development-40532/1") && Number.isSafeInteger(policyExpiry) &&
+		need(policy && (id(policyId) || production && policyId === "ios-native-push-development-40533/1") && Number.isSafeInteger(policyExpiry) &&
 			policy.id === policyId && policy.expiresAt === policyExpiry &&
 			Date.now() < policyExpiry! && isWorkerCurrent() && policy.isCurrent(), unavailable, 503);
 		return policy;

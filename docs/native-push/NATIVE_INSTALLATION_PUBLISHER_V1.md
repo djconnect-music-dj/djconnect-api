@@ -315,3 +315,23 @@ and monotonically increasing counter. Missing legacy/null metadata grants no
 positive reauthorization. Retaining old registration identity is distinct from
 pruning a closed pair's private negative credential: neither operation permits
 the old Apple key to create a second initial counter namespace.
+
+
+## New selected signed development build 40533 —24 November 2026
+
+The owner selected NEW `ios-native-push-development-40533/1` for actual signed
+source `60fd1157207dfb0f8cc7fe5fbf3acfd26fd3ef58`, AppID
+`ZEML4LPXH4.dev.djconnect.ios`, bundle 40533, App Attest/APNs development and
+get-task-allow true. The [bounded static evidence](signed-ios-40533-policy-evidence.json)
+retains the exact signed manifest digest and actual app/Widget executable hashes.
+Strict deep codesign and real entitlement readback are static artifact evidence.
+
+Expiry remains 2026-12-23T10:00:00Z. Category 3/AwAAAA== is the retained explicit
+SERVER POLICY EXPECTATION, never inferred from codesign and not an actual Apple
+proof claim. The genuine verifier/current signed status must prove all selected
+properties. Record, production first-key entry and exact low-level policy-id
+guard move together. Mismatched old 40532/other build, category or environment is
+closed; no wildcard, old-key relabel or implicit device/channel opt-in exists.
+Old 40532 records and historical proofs remain unchanged. Scoped old negative
+management remains available; current original pair/credential/consent/source,
+role bounds, native clock/target/read and real provider/device checks still apply.
