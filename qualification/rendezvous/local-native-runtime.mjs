@@ -63,7 +63,31 @@ export function validateNativeCounterLayer(raw){
  return d;
 }
 async function counterLayer(){return validateNativeCounterLayer(await readFile(join(repo,counterDeltaPath)));}
+const ackDeltaPath='docs/rendezvous/native-ack-key-bounds-source-delta-v1.json';
+const ackDeltaPin='68ced5635e8010c94203c09711b3ab16f6cac15e6dea4c6ed07518f17a669ea5';
+const ackChanges=['src/native-push/first-key-apple.ts','src/native-push/first-key-service.ts'];
+export function validateNativeAckLayer(raw){
+ need(sha(raw)===ackDeltaPin);const d=JSON.parse(raw);
+ need(sameKeys(d,['schema_version','scope','base_source','qualified_product_source','baseline_source_map_sha256','effective_source_map_sha256',
+  'changes','reference_changes','prior_bytes_b64','legacy_public_activation_allowed','device_acceptance','production_effect_authorized'])&&
+  d.schema_version===1&&d.scope==='EXACT_PRODUCTION_NATIVE_ACK_KEY_BOUNDS_NOT_AUTHORITY'&&
+  d.base_source==='dc82bbea402114a7e3b6bbea148b4fc90b0a9a6b'&&d.qualified_product_source==='3c2151e3b0e0dd29f33178b0061b576b8da9fd89'&&
+  d.legacy_public_activation_allowed===false&&d.device_acceptance===false&&d.production_effect_authorized===false&&
+  sameKeys(d.changes,ackChanges)&&sameKeys(d.reference_changes,nativeReferenceAdditions)&&sameKeys(d.prior_bytes_b64,[...ackChanges,...nativeReferenceAdditions]));
+ for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
+  const old=Buffer.from(d.prior_bytes_b64[name],'base64');need(sameKeys(c,['before','after'])&&c.before!==c.after&&
+   old.toString('base64')===d.prior_bytes_b64[name]&&sha(old)===c.before);
+ }
+ return d;
+}
+async function ackLayer(){return validateNativeAckLayer(await readFile(join(repo,ackDeltaPath)));}
+export async function nativeAckPrevious(name,raw){
+ if(![...ackChanges,...nativeReferenceAdditions].includes(name))return raw;
+ const d=await ackLayer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
+ return Buffer.from(d.prior_bytes_b64[name],'base64');
+}
 export async function nativeCounterPrevious(name,raw){
+ raw=await nativeAckPrevious(name,raw);
  if(![...counterChanges,...nativeReferenceChanges].includes(name))return raw;
  const d=await counterLayer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
  return Buffer.from(d.prior_bytes_b64[name],'base64');
@@ -82,8 +106,11 @@ export async function sourceSnapshot(){
  const status=gitRead(['status','--porcelain','--untracked-files=normal']);need(status.status===0&&status.stdout==='');
  const checked=spawnSync('python3',['scripts/validate_rendezvous_deployment_plan.py'],{cwd:repo,encoding:'utf8',timeout:30000});
  need(checked.status===0);const preparation=JSON.parse(checked.stdout);need(preparation.activation_allowed===false);
- const publishedPlan=JSON.parse(await readFile(join(repo,'docs/rendezvous/deployment-preparation-v1.json'))),native=await nativeLayer(),counter=await counterLayer();
+ const publishedPlan=JSON.parse(await readFile(join(repo,'docs/rendezvous/deployment-preparation-v1.json'))),native=await nativeLayer(),counter=await counterLayer(),ack=await ackLayer();
  const plan={...publishedPlan,source_hashes:{...publishedPlan.source_hashes},reference_hashes:{...publishedPlan.reference_hashes}};
+ for(const[name,c]of Object.entries(ack.changes)){need(plan.source_hashes[name]===c.after);plan.source_hashes[name]=c.before;}
+ for(const[name,c]of Object.entries(ack.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
+ const counterPublishedSources={...plan.source_hashes};
  for(const[name,c]of Object.entries(counter.changes)){need(plan.source_hashes[name]===c.after);plan.source_hashes[name]=c.before;}
  for(const[name,c]of Object.entries(counter.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
  for(const[name,c]of Object.entries(native.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
@@ -373,10 +400,13 @@ export async function sourceSnapshot(){
  need(mapHash(previousSources)===native.baseline_source_map_sha256&&mapHash(plan.source_hashes)===native.effective_source_map_sha256&&
   provenance.installation_native_widget_source_delta_sha256===nativeDeltaPin&&provenance.installation_native_widget_source_map_sha256===native.effective_source_map_sha256&&
   publishedPlan.reference_hashes[nativeDeltaPath]===nativeDeltaPin);
- for(const[name,pin]of Object.entries(native.reference_additions))need(publishedPlan.reference_hashes[name]===pin);
+ for(const[name,pin]of Object.entries(native.reference_additions))need(plan.reference_hashes[name]===pin);
  need(mapHash(plan.source_hashes)===counter.baseline_source_map_sha256&&counter.baseline_source_map_sha256===native.effective_source_map_sha256&&
-  mapHash(publishedPlan.source_hashes)===counter.effective_source_map_sha256&&provenance.native_widget_counter_integrity_delta_sha256===counterDeltaPin&&
+  mapHash(counterPublishedSources)===counter.effective_source_map_sha256&&provenance.native_widget_counter_integrity_delta_sha256===counterDeltaPin&&
   provenance.native_widget_counter_integrity_source_map_sha256===counter.effective_source_map_sha256&&publishedPlan.reference_hashes[counterDeltaPath]===counterDeltaPin);
+ need(mapHash(counterPublishedSources)===ack.baseline_source_map_sha256&&ack.baseline_source_map_sha256===counter.effective_source_map_sha256&&
+  mapHash(publishedPlan.source_hashes)===ack.effective_source_map_sha256&&provenance.native_ack_key_bounds_delta_sha256===ackDeltaPin&&
+  provenance.native_ack_key_bounds_source_map_sha256===ack.effective_source_map_sha256&&publishedPlan.reference_hashes[ackDeltaPath]===ackDeltaPin);
  const pins={...root.source_hashes,...publishedPlan.source_hashes,...publishedPlan.reference_hashes};
  const installed=Object.keys(root.source_hashes).filter(p=>p.startsWith('node_modules/'));need(installed.length===50);
  for(const [name,change] of Object.entries(dependency.installed_changes)){need(name==='node_modules/pkijs/build/index.js'&&pins[name]===change.before);pins[name]=change.after;}

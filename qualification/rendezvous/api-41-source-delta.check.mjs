@@ -31,7 +31,7 @@ test('JS source transition rejects each tampered pinned file', {timeout: 90000},
     const manifestPath='docs/rendezvous/api-4-1-manifest-refresh-delta-v1.json';
     const manifests=JSON.parse(readFileSync(join(checkout,manifestPath),'utf8'));
     const nativePath='docs/rendezvous/installation-native-widget-source-delta-v1.json',native=JSON.parse(readFileSync(join(checkout,nativePath),'utf8'));
-    for(const file of new Set([...Object.keys(delta.workflow_changes),...Object.keys(delta.version_source_changes),...Object.keys(manifests.manifest_changes),deltaPath,manifestPath,'docs/rendezvous/api-canonical-workflow-pin-reset-v1.json',...Object.keys(native.changes),...Object.keys(native.additions),...Object.keys(native.reference_changes),...Object.keys(native.reference_additions),nativePath,'docs/rendezvous/native-widget-counter-integrity-source-delta-v1.json'])){
+    for(const file of new Set([...Object.keys(delta.workflow_changes),...Object.keys(delta.version_source_changes),...Object.keys(manifests.manifest_changes),deltaPath,manifestPath,'docs/rendezvous/api-canonical-workflow-pin-reset-v1.json',...Object.keys(native.changes),...Object.keys(native.additions),...Object.keys(native.reference_changes),...Object.keys(native.reference_additions),nativePath,'docs/rendezvous/native-widget-counter-integrity-source-delta-v1.json','docs/rendezvous/native-ack-key-bounds-source-delta-v1.json'])){
       const path=join(checkout,file),original=readFileSync(path);
       git(['update-index','--assume-unchanged','--',file]);
       try {

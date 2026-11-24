@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
-import {repo,validateNativeWidgetLayer,nativeWidgetPrevious,nativeCounterPrevious,validateNativeCounterLayer} from './local-native-runtime.mjs';
+import {repo,validateNativeWidgetLayer,nativeWidgetPrevious,nativeCounterPrevious,validateNativeCounterLayer,nativeAckPrevious,validateNativeAckLayer} from './local-native-runtime.mjs';
 const hash=raw=>createHash('sha256').update(raw).digest('hex');
 const path='docs/rendezvous/installation-native-widget-source-delta-v1.json';
 test('native Widget source delta preserves exact original bytes, checks every actual replacement and rejects delta tampering',async()=>{
@@ -28,5 +28,14 @@ test('counter integrity successor preserves its exact predecessor and rejects ea
  for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
   const current=await readFile(join(repo,name));assert.equal(hash(await nativeCounterPrevious(name,current)),c.before);
   await assert.rejects(nativeCounterPrevious(name,Buffer.concat([current,Buffer.from('\n')])));
+ }
+});
+
+test('original ACK key-bound successor rejects changed receipt sources, contract reference or delta',async()=>{
+ const raw=await readFile(join(repo,'docs/rendezvous/native-ack-key-bounds-source-delta-v1.json')),d=validateNativeAckLayer(raw);
+ assert.equal(Object.keys(d.changes).length,2);assert.throws(()=>validateNativeAckLayer(Buffer.concat([raw,Buffer.from('\n')])));
+ for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
+  const current=await readFile(join(repo,name));assert.equal(hash(await nativeAckPrevious(name,current)),c.before);
+  await assert.rejects(nativeAckPrevious(name,Buffer.concat([current,Buffer.from('\n')])));
  }
 });

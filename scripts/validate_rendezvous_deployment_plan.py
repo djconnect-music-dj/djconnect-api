@@ -1352,6 +1352,7 @@ def counter_widget_delta():
 
 
 def counter_previous_bytes(name, raw):
+    raw = ack_previous_bytes(name, raw)
     if name not in COUNTER_WIDGET_CHANGES | COUNTER_WIDGET_REFERENCE_CHANGES:
         return raw
     import base64
@@ -1371,6 +1372,60 @@ def counter_installation_delta(sources, references):
     require(source_map_digest(sources) == delta['effective_source_map_sha256']
         == SOURCE_PROVENANCE['native_widget_counter_integrity_source_map_sha256'])
     references[COUNTER_WIDGET_DELTA_PATH] = COUNTER_WIDGET_DELTA_SHA256
+    return sources, references
+
+
+ACK_BOUNDS_DELTA_PATH = 'docs/rendezvous/native-ack-key-bounds-source-delta-v1.json'
+ACK_BOUNDS_DELTA_SHA256 = '68ced5635e8010c94203c09711b3ab16f6cac15e6dea4c6ed07518f17a669ea5'
+ACK_BOUNDS_CHANGES = frozenset(('src/native-push/first-key-apple.ts', 'src/native-push/first-key-service.ts'))
+ACK_BOUNDS_REFERENCE_CHANGES = NATIVE_WIDGET_REFERENCE_ADDITIONS
+SOURCE_PROVENANCE.update(native_ack_key_bounds_delta_sha256=ACK_BOUNDS_DELTA_SHA256,
+    native_ack_key_bounds_source_map_sha256='72773388686c5c76a6d47ca5b48349da223b5ed3287b0f340f0413b311507add')
+
+
+def ack_bounds_delta():
+    delta = pinned_working_proof(ACK_BOUNDS_DELTA_PATH, ACK_BOUNDS_DELTA_SHA256)
+    require(set(delta) == {'schema_version', 'scope', 'base_source', 'qualified_product_source',
+        'baseline_source_map_sha256', 'effective_source_map_sha256', 'changes', 'reference_changes',
+        'prior_bytes_b64', 'legacy_public_activation_allowed', 'device_acceptance', 'production_effect_authorized'})
+    require(type(delta['schema_version']) is int and delta['schema_version'] == 1
+        and delta['scope'] == 'EXACT_PRODUCTION_NATIVE_ACK_KEY_BOUNDS_NOT_AUTHORITY'
+        and delta['base_source'] == 'dc82bbea402114a7e3b6bbea148b4fc90b0a9a6b'
+        and delta['qualified_product_source'] == '3c2151e3b0e0dd29f33178b0061b576b8da9fd89'
+        and delta['baseline_source_map_sha256'] == SOURCE_PROVENANCE['native_widget_counter_integrity_source_map_sha256']
+        and delta['legacy_public_activation_allowed'] is False and delta['device_acceptance'] is False
+        and delta['production_effect_authorized'] is False
+        and set(delta['changes']) == ACK_BOUNDS_CHANGES
+        and set(delta['reference_changes']) == ACK_BOUNDS_REFERENCE_CHANGES
+        and set(delta['prior_bytes_b64']) == ACK_BOUNDS_CHANGES | ACK_BOUNDS_REFERENCE_CHANGES)
+    import base64
+    for name, change in {**delta['changes'], **delta['reference_changes']}.items():
+        require(set(change) == {'before', 'after'} and change['before'] != change['after'])
+        raw = base64.b64decode(delta['prior_bytes_b64'][name], validate=True)
+        require(digest(raw) == change['before'] and base64.b64encode(raw).decode() == delta['prior_bytes_b64'][name])
+    return delta
+
+
+def ack_previous_bytes(name, raw):
+    if name not in ACK_BOUNDS_CHANGES | ACK_BOUNDS_REFERENCE_CHANGES:
+        return raw
+    import base64
+    delta = ack_bounds_delta()
+    change = delta['changes'].get(name) or delta['reference_changes'][name]
+    require(digest(raw) == change['after'])
+    return base64.b64decode(delta['prior_bytes_b64'][name], validate=True)
+
+
+def ack_installation_delta(sources, references):
+    delta = ack_bounds_delta()
+    require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
+    for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
+        for name, change in changes.items():
+            require(target[name] == change['before'] and digest(safe_path(name).read_bytes()) == change['after'])
+            target[name] = change['after']
+    require(source_map_digest(sources) == delta['effective_source_map_sha256']
+        == SOURCE_PROVENANCE['native_ack_key_bounds_source_map_sha256'])
+    references[ACK_BOUNDS_DELTA_PATH] = ACK_BOUNDS_DELTA_SHA256
     return sources, references
 
 
@@ -1639,7 +1694,7 @@ def baseline():
                 require(target[name] == change['before'])
                 target[name] = change['after']
     refs[CANONICAL_PIN_DELTA_PATH] = CANONICAL_PIN_DELTA_SHA256
-    return counter_installation_delta(*native_installation_delta(sources, refs))
+    return ack_installation_delta(*counter_installation_delta(*native_installation_delta(sources, refs)))
 
 
 def validate(plan):

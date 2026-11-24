@@ -58,3 +58,21 @@ class NativeWidgetSourceDeltaTests(unittest.TestCase):
             with patch.object(v, 'safe_path', side_effect=lambda n: fake if n == v.COUNTER_WIDGET_DELTA_PATH else original(n)):
                 with self.assertRaises(ValueError):
                     v.counter_widget_delta()
+
+    def test_ack_successor_retains_exact_original_receipt_writer_and_doc_inputs(self):
+        delta = v.ack_bounds_delta()
+        self.assertEqual(len(delta['changes']), 2)
+        for name, change in {**delta['changes'], **delta['reference_changes']}.items():
+            raw = (v.ROOT / name).read_bytes()
+            self.assertEqual(v.digest(v.ack_previous_bytes(name, raw)), change['before'])
+            with self.assertRaises(ValueError):
+                v.ack_previous_bytes(name, raw + b'\n')
+
+    def test_ack_successor_cannot_forge_an_original_bound_or_permission(self):
+        original = v.safe_path
+        with tempfile.TemporaryDirectory() as directory:
+            fake = Path(directory) / 'delta'
+            fake.write_bytes((v.ROOT / v.ACK_BOUNDS_DELTA_PATH).read_bytes() + b'\n')
+            with patch.object(v, 'safe_path', side_effect=lambda n: fake if n == v.ACK_BOUNDS_DELTA_PATH else original(n)):
+                with self.assertRaises(ValueError):
+                    v.ack_bounds_delta()
