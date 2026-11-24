@@ -142,7 +142,7 @@ class PreparationTests(unittest.TestCase):
                          v.WRANGLER_4160_PROVENANCE, v.WRANGLER_4160_DELTA_PATH,
                          *v.ORG_GOVERNANCE_SOURCES, *v.ORG_GOVERNANCE_REFERENCES,
                          v.ORG_GOVERNANCE_DELTA_PATH,
-                         v.CANONICAL_PIN_DELTA_PATH, v.NATIVE_WIDGET_DELTA_PATH, *v.NATIVE_WIDGET_CHANGES, *v.NATIVE_WIDGET_ADDITIONS, *v.NATIVE_WIDGET_REFERENCE_CHANGES, *v.NATIVE_WIDGET_REFERENCE_ADDITIONS, v.API_CORE_IDENTITY_DELTA_PATH, v.API_ORG_RELEASE_DELTA_PATH, v.API_ORG_CORE_AUTHORITY_DELTA_PATH,
+                         v.CANONICAL_PIN_DELTA_PATH, v.NATIVE_WIDGET_DELTA_PATH, v.COUNTER_WIDGET_DELTA_PATH, *v.NATIVE_WIDGET_CHANGES, *v.NATIVE_WIDGET_ADDITIONS, *v.NATIVE_WIDGET_REFERENCE_CHANGES, *v.NATIVE_WIDGET_REFERENCE_ADDITIONS, v.API_CORE_IDENTITY_DELTA_PATH, v.API_ORG_RELEASE_DELTA_PATH, v.API_ORG_CORE_AUTHORITY_DELTA_PATH,
                          v.API_SHARED_GOVERNANCE_DELTA_PATH, *v.API_SHARED_GOVERNANCE_WORKFLOWS, *v.API_SHARED_GOVERNANCE_MANIFESTS,
                          v.API_GUARD_REFERENCE_DELTA_PATH, v.API_GOVERNANCE_SUMMARY_DELTA_PATH, 'scripts/check_reusable_workflow_refs.sh',
                          v.CORE_GOVERNANCE_TRANSITION_PATH, *v.CORE_GOVERNANCE_WORKFLOWS,
@@ -166,6 +166,8 @@ class PreparationTests(unittest.TestCase):
             pinned.update({name: change['after'] for name, change in {**canonical_delta['workflow_changes'], **canonical_delta['manifest_changes']}.items()})
             native_delta = v.native_widget_delta()
             pinned.update({name: change['after'] for name, change in {**native_delta['changes'], **native_delta['reference_changes']}.items()})
+            counter_delta = v.counter_widget_delta()
+            pinned.update({name: change['after'] for name, change in {**counter_delta['changes'], **counter_delta['reference_changes']}.items()})
             for path in additions:
                 raw = (canonical / path).read_bytes()
                 expected = pinned[path]

@@ -86,7 +86,7 @@
     "docs/rendezvous/active-ci-retention-source-delta-v1.json": "a474ec1ca6579b0892348be55c06ab0122105615d379f7727357b4a401ce56db",
     "docs/rendezvous/native-first-category-source-delta-v1.json": "6c0a6e47f00057881fd4ecdab64c626c91a583617fe5ae6376c62cafbf06960e",
     "docs/rendezvous/private-receiving-mount-source-delta-v1.json": "8d4c6f7343c37bea54ac53709dd49d1c01e28a2d2ebe19a0102448cc7fccc960",
-    "coordinator/host-app-wake-receiving/runtime/source-inputs.json": "08b4e58601441dc363de9305a6743b48c68f18d714d144ad9c73edebc1041f4b",
+    "coordinator/host-app-wake-receiving/runtime/source-inputs.json": "f0b6d727c29ca739b37759adeb545febd5fb89b95efc74406fa09b9223e7875b",
     "coordinator/installation-principal/source-manifest.json": "ab5d13673daa363e6061c2f2358ea973bc8f29a213944770c4576883cecffcfa",
     "coordinator/host-app-wake/source-manifest.json": "07ca7491b56bd8b91fcd75647947a2ad9952201bfceb44bdb1b97673a732b3a0",
     "coordinator/principal-possession/source-manifest.json": "3bf4eea7248c3f74f0a7cd9a29debda6b852e9aaffd730595060aeddffcf8e8b",
@@ -142,7 +142,8 @@
     "docs/rendezvous/api-org-core-authority-source-delta-v1.json": "a4a87feb002f94f8a8db3afe3414372ea51ae11b04dd7167f0f832d4c1967de1",
     "docs/rendezvous/api-canonical-workflow-pin-reset-v1.json": "56fde11218670c5e22d23e9fe43eac373cec36e80501eafb563cf668f8369c8e",
     "docs/native-push/NATIVE_INSTALLATION_PUBLISHER_V1.md": "49465154710785ef0a1c5648d7c903204790dea9b7f3c294eb2f8ccc0b3d600f",
-    "docs/rendezvous/installation-native-widget-source-delta-v1.json": "6b3ffda494c1eb530919793555861437bb9d0030330f932803f31349eab79c42"
+    "docs/rendezvous/installation-native-widget-source-delta-v1.json": "6b3ffda494c1eb530919793555861437bb9d0030330f932803f31349eab79c42",
+    "docs/rendezvous/native-widget-counter-integrity-source-delta-v1.json": "b05b708ea760dedf25c56ed008f2e7d9ac6d7844b7924d3ce902266b30234fb2"
   },
   "schema_version": 1,
   "secret_names": [
@@ -300,7 +301,7 @@
     "qualification/rendezvous/key-address.ts": "1f26277b64c54123833f702f30a55149c7fdbcfdcd56fc168d7401a84ed2f277",
     "qualification/rendezvous/testflight-release.mjs": "4fb294a53484f4ade8eb11bfcbd0fad974392b8e0a4351abdd6550cd59f75f57",
     "qualification/rendezvous/testflight-release.d.mts": "63942fa0d8ac62b8a5778b98cfa3ba82b648e7282bc13506e9ca2edfabf3910d",
-    "coordinator/host-app-wake-receiving/native-assertion-crypto.ts": "e8c8081a52be6dfe8955e138cd1f0c6ce7b52bbc87ee2b0e14a9f64b480ac6c8",
+    "coordinator/host-app-wake-receiving/native-assertion-crypto.ts": "8871980641185cf7cbb97985cb547cc317861c34e0d236af849d130b27186431",
     "migrations/0014_native_installation_publisher.sql": "bd7f14801ae960f200ac959f20ba351aa9184839845400f7297e5af76139fed3",
     "migrations/0015_native_installation_surface_roles.sql": "42ee202234bc5edd153b1d3169a9cd3489dbe83acb3693ebe88a2842af139e5e",
     "migrations/0016_native_installation_apple_key.sql": "58424fc807c75c7e91c41abb68e2cf5331c6e4b650c615474861d2eaa75dac5b",
@@ -312,7 +313,7 @@
     "src/native-push/installation-first-key.ts": "c8d3243067760da1c253bc5c1f8896a2abeb5ab105b02aa2f79b82362d3dec5a",
     "src/native-push/installation-policy.ts": "83cde55378df272f6e48197b033b3fe5896c5e075e3dbf080d07803db2e59415",
     "src/native-push/installation-publisher.ts": "1ba6d1f0c14e2145abb32de473c45ec10a69e31ad80bc35eb092bc91f551e104",
-    "src/native-push/installation-reauthorization.ts": "627ce788953d43a66f6fd1847c660bfa2fd5670fc0e90e3e4adce1df00c1471a",
+    "src/native-push/installation-reauthorization.ts": "0e95b8538fd493ae10a7e7b8c783f941c0cbf9fff95ad1b14922ca042e499637",
     "src/native-push/installation-surface-dispatch.ts": "ccb63b0eb048b06b1a7ac4241a01683b58fa2a57a5bd184dbab8d4ef64b4b0ce",
     "src/native-push/installation-surface-enrol.ts": "e1e3cd83784380db9f661ef7d06a4b7044a18438ec312bce84813e332353dc93"
   },
@@ -377,7 +378,9 @@
     "api_org_core_authority_delta_sha256": "a4a87feb002f94f8a8db3afe3414372ea51ae11b04dd7167f0f832d4c1967de1",
     "canonical_workflow_pin_reset_sha256": "56fde11218670c5e22d23e9fe43eac373cec36e80501eafb563cf668f8369c8e",
     "installation_native_widget_source_delta_sha256": "6b3ffda494c1eb530919793555861437bb9d0030330f932803f31349eab79c42",
-    "installation_native_widget_source_map_sha256": "5f085d985c94f1b4c317cf28b2e82dc1e2dd2d17cfd01faf2534ff62ab57b23f"
+    "installation_native_widget_source_map_sha256": "5f085d985c94f1b4c317cf28b2e82dc1e2dd2d17cfd01faf2534ff62ab57b23f",
+    "native_widget_counter_integrity_delta_sha256": "b05b708ea760dedf25c56ed008f2e7d9ac6d7844b7924d3ce902266b30234fb2",
+    "native_widget_counter_integrity_source_map_sha256": "d5dc8c6a81173c94777bcdbe9227747fef288c20e48ccee194c8fd98c781e349"
   },
   "status": "NOT_AUTHORIZED",
   "supplying_source_sha": "896ccdc69447c231d04da3a6af4f27ea1f763697",

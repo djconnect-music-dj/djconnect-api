@@ -39,4 +39,22 @@ class NativeWidgetSourceDeltaTests(unittest.TestCase):
         self.assertEqual(len(delta['changes']), 5)
         self.assertEqual(len(delta['additions']), 15)
         for name, pin in {**delta['additions'], **delta['reference_additions']}.items():
-            self.assertEqual(v.digest((v.ROOT / name).read_bytes()), pin)
+            self.assertEqual(v.digest(v.counter_previous_bytes(name, (v.ROOT / name).read_bytes())), pin)
+
+    def test_counter_successor_reconstructs_each_exact_predecessor_and_rejects_actual_drift(self):
+        delta = v.counter_widget_delta()
+        self.assertEqual(len(delta['changes']), 2)
+        for name, change in {**delta['changes'], **delta['reference_changes']}.items():
+            raw = (v.ROOT / name).read_bytes()
+            self.assertEqual(v.digest(v.counter_previous_bytes(name, raw)), change['before'])
+            with self.assertRaises(ValueError):
+                v.counter_previous_bytes(name, raw + b'\n')
+
+    def test_counter_successor_cannot_be_modified_or_grant_permission(self):
+        original = v.safe_path
+        with tempfile.TemporaryDirectory() as directory:
+            fake = Path(directory) / 'delta'
+            fake.write_bytes((v.ROOT / v.COUNTER_WIDGET_DELTA_PATH).read_bytes() + b'\n')
+            with patch.object(v, 'safe_path', side_effect=lambda n: fake if n == v.COUNTER_WIDGET_DELTA_PATH else original(n)):
+                with self.assertRaises(ValueError):
+                    v.counter_widget_delta()

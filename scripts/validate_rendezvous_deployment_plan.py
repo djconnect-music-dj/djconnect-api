@@ -1293,7 +1293,7 @@ def native_widget_delta():
 
 
 def native_before_bytes(name):
-    raw = safe_path(name).read_bytes()
+    raw = counter_previous_bytes(name, safe_path(name).read_bytes())
     if name not in NATIVE_WIDGET_CHANGES | NATIVE_WIDGET_REFERENCE_CHANGES:
         return raw
     import base64
@@ -1308,15 +1308,69 @@ def native_installation_delta(sources, references):
     require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
     for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
         for name, change in changes.items():
-            require(target[name] == change['before'] and digest(safe_path(name).read_bytes()) == change['after'])
+            require(target[name] == change['before'] and digest(counter_previous_bytes(name, safe_path(name).read_bytes())) == change['after'])
             target[name] = change['after']
     for target, additions in ((sources, delta['additions']), (references, delta['reference_additions'])):
         for name, pin in additions.items():
-            require(name not in target and digest(safe_path(name).read_bytes()) == pin)
+            require(name not in target and digest(counter_previous_bytes(name, safe_path(name).read_bytes())) == pin)
             target[name] = pin
     require(source_map_digest(sources) == delta['effective_source_map_sha256']
         == SOURCE_PROVENANCE['installation_native_widget_source_map_sha256'])
     references[NATIVE_WIDGET_DELTA_PATH] = NATIVE_WIDGET_DELTA_SHA256
+    return sources, references
+
+
+COUNTER_WIDGET_DELTA_PATH = 'docs/rendezvous/native-widget-counter-integrity-source-delta-v1.json'
+COUNTER_WIDGET_DELTA_SHA256 = 'b05b708ea760dedf25c56ed008f2e7d9ac6d7844b7924d3ce902266b30234fb2'
+COUNTER_WIDGET_CHANGES = frozenset(('coordinator/host-app-wake-receiving/native-assertion-crypto.ts', 'src/native-push/installation-reauthorization.ts'))
+COUNTER_WIDGET_REFERENCE_CHANGES = NATIVE_WIDGET_REFERENCE_CHANGES
+SOURCE_PROVENANCE.update(native_widget_counter_integrity_delta_sha256=COUNTER_WIDGET_DELTA_SHA256,
+    native_widget_counter_integrity_source_map_sha256='d5dc8c6a81173c94777bcdbe9227747fef288c20e48ccee194c8fd98c781e349')
+
+
+def counter_widget_delta():
+    delta = pinned_working_proof(COUNTER_WIDGET_DELTA_PATH, COUNTER_WIDGET_DELTA_SHA256)
+    require(set(delta) == {'schema_version', 'scope', 'base_source', 'qualified_product_source',
+        'baseline_source_map_sha256', 'effective_source_map_sha256', 'changes', 'reference_changes',
+        'prior_bytes_b64', 'legacy_public_activation_allowed', 'device_acceptance', 'production_effect_authorized'})
+    require(type(delta['schema_version']) is int and delta['schema_version'] == 1
+        and delta['scope'] == 'EXACT_NATIVE_WIDGET_COUNTER_INTEGRITY_NOT_AUTHORITY'
+        and delta['base_source'] == 'a926c936881bdbf80d12f464ab3eef9aadcfac56'
+        and delta['qualified_product_source'] == 'd9df1610584960a7843361e9f8e5533b07bf85be'
+        and delta['baseline_source_map_sha256'] == SOURCE_PROVENANCE['installation_native_widget_source_map_sha256']
+        and delta['legacy_public_activation_allowed'] is False and delta['device_acceptance'] is False
+        and delta['production_effect_authorized'] is False
+        and set(delta['changes']) == COUNTER_WIDGET_CHANGES
+        and set(delta['reference_changes']) == COUNTER_WIDGET_REFERENCE_CHANGES
+        and set(delta['prior_bytes_b64']) == COUNTER_WIDGET_CHANGES | COUNTER_WIDGET_REFERENCE_CHANGES)
+    import base64
+    for name, change in {**delta['changes'], **delta['reference_changes']}.items():
+        require(set(change) == {'before', 'after'} and change['before'] != change['after'])
+        raw = base64.b64decode(delta['prior_bytes_b64'][name], validate=True)
+        require(digest(raw) == change['before'] and base64.b64encode(raw).decode() == delta['prior_bytes_b64'][name])
+    return delta
+
+
+def counter_previous_bytes(name, raw):
+    if name not in COUNTER_WIDGET_CHANGES | COUNTER_WIDGET_REFERENCE_CHANGES:
+        return raw
+    import base64
+    delta = counter_widget_delta()
+    change = delta['changes'].get(name) or delta['reference_changes'][name]
+    require(digest(raw) == change['after'])
+    return base64.b64decode(delta['prior_bytes_b64'][name], validate=True)
+
+
+def counter_installation_delta(sources, references):
+    delta = counter_widget_delta()
+    require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
+    for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
+        for name, change in changes.items():
+            require(target[name] == change['before'] and digest(safe_path(name).read_bytes()) == change['after'])
+            target[name] = change['after']
+    require(source_map_digest(sources) == delta['effective_source_map_sha256']
+        == SOURCE_PROVENANCE['native_widget_counter_integrity_source_map_sha256'])
+    references[COUNTER_WIDGET_DELTA_PATH] = COUNTER_WIDGET_DELTA_SHA256
     return sources, references
 
 
@@ -1585,7 +1639,7 @@ def baseline():
                 require(target[name] == change['before'])
                 target[name] = change['after']
     refs[CANONICAL_PIN_DELTA_PATH] = CANONICAL_PIN_DELTA_SHA256
-    return native_installation_delta(sources, refs)
+    return counter_installation_delta(*native_installation_delta(sources, refs))
 
 
 def validate(plan):

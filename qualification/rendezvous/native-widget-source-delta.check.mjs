@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
-import {repo,validateNativeWidgetLayer,nativeWidgetPrevious} from './local-native-runtime.mjs';
+import {repo,validateNativeWidgetLayer,nativeWidgetPrevious,nativeCounterPrevious,validateNativeCounterLayer} from './local-native-runtime.mjs';
 const hash=raw=>createHash('sha256').update(raw).digest('hex');
 const path='docs/rendezvous/installation-native-widget-source-delta-v1.json';
 test('native Widget source delta preserves exact original bytes, checks every actual replacement and rejects delta tampering',async()=>{
@@ -17,7 +17,16 @@ test('native Widget source delta preserves exact original bytes, checks every ac
   assert.equal(hash(await nativeWidgetPrevious(name,actual)),c.before);
   await assert.rejects(nativeWidgetPrevious(name,Buffer.concat([actual,Buffer.from('\n')])));
  }
- for(const[name,pin]of Object.entries({...d.additions,...d.reference_additions}))assert.equal(hash(await readFile(join(repo,name))),pin);
+ for(const[name,pin]of Object.entries({...d.additions,...d.reference_additions}))assert.equal(hash(await nativeCounterPrevious(name,await readFile(join(repo,name)))),pin);
  const unaffected=await readFile(join(repo,'src/crypto.ts'));
  assert.equal(await nativeWidgetPrevious('src/crypto.ts',unaffected),unaffected);
+});
+
+test('counter integrity successor preserves its exact predecessor and rejects each changed source or proof',async()=>{
+ const raw=await readFile(join(repo,'docs/rendezvous/native-widget-counter-integrity-source-delta-v1.json')),d=validateNativeCounterLayer(raw);
+ assert.equal(Object.keys(d.changes).length,2);assert.throws(()=>validateNativeCounterLayer(Buffer.concat([raw,Buffer.from('\n')])));
+ for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
+  const current=await readFile(join(repo,name));assert.equal(hash(await nativeCounterPrevious(name,current)),c.before);
+  await assert.rejects(nativeCounterPrevious(name,Buffer.concat([current,Buffer.from('\n')])));
+ }
 });

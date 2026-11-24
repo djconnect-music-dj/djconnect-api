@@ -45,7 +45,31 @@ export function validateNativeWidgetLayer(raw){
  return d;
 }
 async function nativeLayer(){return validateNativeWidgetLayer(await readFile(join(repo,nativeDeltaPath)));}
+const counterDeltaPath='docs/rendezvous/native-widget-counter-integrity-source-delta-v1.json';
+const counterDeltaPin='b05b708ea760dedf25c56ed008f2e7d9ac6d7844b7924d3ce902266b30234fb2';
+const counterChanges=['coordinator/host-app-wake-receiving/native-assertion-crypto.ts','src/native-push/installation-reauthorization.ts'];
+export function validateNativeCounterLayer(raw){
+ need(sha(raw)===counterDeltaPin);const d=JSON.parse(raw);
+ need(sameKeys(d,['schema_version','scope','base_source','qualified_product_source','baseline_source_map_sha256','effective_source_map_sha256',
+  'changes','reference_changes','prior_bytes_b64','legacy_public_activation_allowed','device_acceptance','production_effect_authorized'])&&
+  d.schema_version===1&&d.scope==='EXACT_NATIVE_WIDGET_COUNTER_INTEGRITY_NOT_AUTHORITY'&&
+  d.base_source==='a926c936881bdbf80d12f464ab3eef9aadcfac56'&&d.qualified_product_source==='d9df1610584960a7843361e9f8e5533b07bf85be'&&
+  d.legacy_public_activation_allowed===false&&d.device_acceptance===false&&d.production_effect_authorized===false&&
+  sameKeys(d.changes,counterChanges)&&sameKeys(d.reference_changes,nativeReferenceChanges)&&sameKeys(d.prior_bytes_b64,[...counterChanges,...nativeReferenceChanges]));
+ for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
+  const old=Buffer.from(d.prior_bytes_b64[name],'base64');need(sameKeys(c,['before','after'])&&c.before!==c.after&&
+   old.toString('base64')===d.prior_bytes_b64[name]&&sha(old)===c.before);
+ }
+ return d;
+}
+async function counterLayer(){return validateNativeCounterLayer(await readFile(join(repo,counterDeltaPath)));}
+export async function nativeCounterPrevious(name,raw){
+ if(![...counterChanges,...nativeReferenceChanges].includes(name))return raw;
+ const d=await counterLayer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
+ return Buffer.from(d.prior_bytes_b64[name],'base64');
+}
 export async function nativeWidgetPrevious(name,raw){
+ raw=await nativeCounterPrevious(name,raw);
  if(![...nativeChanges,...nativeReferenceChanges].includes(name))return raw;
  const d=await nativeLayer(),c=d.changes[name]||d.reference_changes[name];need(sha(raw)===c.after);
  return Buffer.from(d.prior_bytes_b64[name],'base64');
@@ -58,8 +82,10 @@ export async function sourceSnapshot(){
  const status=gitRead(['status','--porcelain','--untracked-files=normal']);need(status.status===0&&status.stdout==='');
  const checked=spawnSync('python3',['scripts/validate_rendezvous_deployment_plan.py'],{cwd:repo,encoding:'utf8',timeout:30000});
  need(checked.status===0);const preparation=JSON.parse(checked.stdout);need(preparation.activation_allowed===false);
- const publishedPlan=JSON.parse(await readFile(join(repo,'docs/rendezvous/deployment-preparation-v1.json'))),native=await nativeLayer();
- const plan={...publishedPlan,reference_hashes:{...publishedPlan.reference_hashes}};
+ const publishedPlan=JSON.parse(await readFile(join(repo,'docs/rendezvous/deployment-preparation-v1.json'))),native=await nativeLayer(),counter=await counterLayer();
+ const plan={...publishedPlan,source_hashes:{...publishedPlan.source_hashes},reference_hashes:{...publishedPlan.reference_hashes}};
+ for(const[name,c]of Object.entries(counter.changes)){need(plan.source_hashes[name]===c.after);plan.source_hashes[name]=c.before;}
+ for(const[name,c]of Object.entries(counter.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
  for(const[name,c]of Object.entries(native.reference_changes)){need(plan.reference_hashes[name]===c.after);plan.reference_hashes[name]=c.before;}
 
  const rootPath='docs/rendezvous/closed-enrollment-service-product-observations-v2.json';
@@ -348,7 +374,10 @@ export async function sourceSnapshot(){
   provenance.installation_native_widget_source_delta_sha256===nativeDeltaPin&&provenance.installation_native_widget_source_map_sha256===native.effective_source_map_sha256&&
   publishedPlan.reference_hashes[nativeDeltaPath]===nativeDeltaPin);
  for(const[name,pin]of Object.entries(native.reference_additions))need(publishedPlan.reference_hashes[name]===pin);
- const pins={...root.source_hashes,...plan.source_hashes,...publishedPlan.reference_hashes};
+ need(mapHash(plan.source_hashes)===counter.baseline_source_map_sha256&&counter.baseline_source_map_sha256===native.effective_source_map_sha256&&
+  mapHash(publishedPlan.source_hashes)===counter.effective_source_map_sha256&&provenance.native_widget_counter_integrity_delta_sha256===counterDeltaPin&&
+  provenance.native_widget_counter_integrity_source_map_sha256===counter.effective_source_map_sha256&&publishedPlan.reference_hashes[counterDeltaPath]===counterDeltaPin);
+ const pins={...root.source_hashes,...publishedPlan.source_hashes,...publishedPlan.reference_hashes};
  const installed=Object.keys(root.source_hashes).filter(p=>p.startsWith('node_modules/'));need(installed.length===50);
  for(const [name,change] of Object.entries(dependency.installed_changes)){need(name==='node_modules/pkijs/build/index.js'&&pins[name]===change.before);pins[name]=change.after;}
  await checkSourcePins(pins,repo);
