@@ -69,7 +69,7 @@ export function createInstallationReauthorization(env:AppEnv,current:()=>boolean
     JOIN native_installation_pair_publications p ON p.credential_id=k.credential_id AND p.operation_id=?
     WHERE k.credential_id=? AND k.operation_id=? AND k.receipt=? AND k.policy_id=? AND k.retired=0
     AND k.apple_key_id_b64 IS NOT NULL AND k.apple_public_key_spki_b64 IS NOT NULL AND k.apple_assertion_policy_json IS NOT NULL
-    AND k.apple_counter>=0 AND k.apple_counter<=4294967295
+    AND typeof(k.apple_counter)='integer' AND k.apple_counter>=0 AND k.apple_counter<=4294967295
     AND k.apple_evidence_expires_at_ms>${sqlNow} AND k.apple_status_expires_at_ms>${sqlNow}
     AND p.request_expires_at_ms>${sqlNow} AND p.consent_revision>original.consent_revision
     AND json_extract(k.original_request,'$.pairing_generation')=p.pairing_generation
@@ -86,6 +86,8 @@ export function createInstallationReauthorization(env:AppEnv,current:()=>boolean
     WHERE k.credential_id=? AND k.operation_id=? AND ${guardSQL}`)
     .bind(publication,credential.id,native.operation_id,...guardValues).first<NativeKey>();
    need(key&&live(),"native_role_current_publication_required",403);
+   need(Number.isSafeInteger(key.apple_counter)&&key.apple_counter>=0&&key.apple_counter<=0xffffffff,
+    "native_role_saved_counter_invalid",503);
    // Capture the genuine stored key metadata before any further await. Its
    // original identity/deadlines must still match at every SQL commit; a later
    // assertion counter is separately serialized by the actual counter CAS.
@@ -165,7 +167,7 @@ export function createInstallationReauthorization(env:AppEnv,current:()=>boolean
     enrolment_sha256:requestHash,publication_operation_id:publication,reauthorization_challenge_id:claimed.id};
    await window.run(()=>db.batch([
     db.prepare(`UPDATE native_installation_first_key SET apple_counter=?,apple_counter_claim=?
-     WHERE credential_id=? AND operation_id=? AND apple_counter=? AND apple_key_id_b64=? AND apple_public_key_spki_b64=?
+     WHERE credential_id=? AND operation_id=? AND typeof(apple_counter)='integer' AND apple_counter=? AND apple_key_id_b64=? AND apple_public_key_spki_b64=?
       AND apple_assertion_policy_json=? AND ${guardSQL} AND ${claimGuard}`)
      .bind(counter,claim,credential.id,native.operation_id,key.apple_counter,key.apple_key_id_b64,key.apple_public_key_spki_b64,
       key.apple_assertion_policy_json,...guardValues,...claimValues),

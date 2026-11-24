@@ -417,3 +417,10 @@ it("initial role cannot promote an old receipt missing genuine native metadata o
  expect((await createInstallationSurfaceEnrol(config,()=>true)(post(installationEnrolPath,await enrolBody(),credential.token))).status).toBe(403);
  expect(await db.prepare("SELECT count(*) FROM native_installation_surface_bindings").first("count(*)")).toBe(0);
 });
+it.each([0.5,-1,4294967296,"invalid-counter"])("corrupt saved counter %s remains unavailable and is never normalized by a genuine assertion",async corrupted=>{
+ const x=await reauthorizationPrepared(),body=await x.assertion(1);
+ await db.prepare("UPDATE native_installation_first_key SET apple_counter=?").bind(corrupted).run();
+ expect((await x.handler(post(reauthorizationPrefix+"register",body,credential.token))).status).toBeGreaterThanOrEqual(400);
+ expect(await db.prepare("SELECT apple_counter FROM native_installation_first_key").first("apple_counter")).toBe(corrupted);
+ expect(await db.prepare("SELECT count(*) FROM native_installation_surface_bindings WHERE admission_kind='reauthorization'").first("count(*)")).toBe(0);
+});
