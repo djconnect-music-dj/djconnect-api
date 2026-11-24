@@ -297,3 +297,21 @@ to remain current. Core does not clamp a policy after it has been signed,
 relabel an old receipt, extend first-key nonce authority or mint permission from
 a status reply. These fields expose real server bounds; actual native-clock,
 source, consent and SDK target qualification remain separate requirements.
+
+
+## Unique verified native Apple key identity — 24 November 2026
+
+Native registration strictly refuses a genuinely verified Apple key ID or SPKI
+that already belongs to any registered native-key row, including permanently
+retired historical rows. This is a uniqueness veto, never cross-principal
+lookup, adoption, key replacement, counter reset or a new identity registry.
+Both exact verified identities are protected by unique SQLite indexes and the
+same atomic native register statement. Concurrent initial claims for one
+verified key have at most one registered winner.
+
+An actual new ordinary pairing uses a genuine newly generated SDK key. OFF/ON
+reauthorization uses only its own original registered row, saved Apple identity
+and monotonically increasing counter. Missing legacy/null metadata grants no
+positive reauthorization. Retaining old registration identity is distinct from
+pruning a closed pair's private negative credential: neither operation permits
+the old Apple key to create a second initial counter namespace.

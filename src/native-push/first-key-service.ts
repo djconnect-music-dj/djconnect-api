@@ -290,12 +290,16 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
             ${production ? ",apple_key_id_b64=?,apple_public_key_spki_b64=?,apple_assertion_policy_json=?,apple_evidence_expires_at_ms=?,apple_status_expires_at_ms=?,apple_counter=0" : ""}
 			WHERE ${activeRow} AND challenge = ? AND receipt IS NULL AND ? > ${databaseNowMs}
 			AND NOT EXISTS (SELECT 1 FROM ${keysTable} WHERE ${production ? "credential_id = ? AND " : ""}pair_binding = ? AND receipt IS NOT NULL) AND ${guard.sql}
-            ${production ? `AND ? > ${databaseNowMs} AND ? > ${databaseNowMs}` : ""}
+            ${production ? `AND ? > ${databaseNowMs} AND ? > ${databaseNowMs}
+             AND NOT EXISTS(SELECT 1 FROM native_installation_first_key registered
+              WHERE registered.receipt IS NOT NULL AND
+               (registered.apple_key_id_b64=? OR registered.apple_public_key_spki_b64=?))` : ""}
 			RETURNING receipt`).bind(input.core_public_key_spki_b64, receipt.transcript_sha256, canonical(receipt),
             ...(production ? [actualApple!.key_id_b64, actualApple!.public_key_spki_b64, actualApple!.policy_json,
                 actualApple!.evidence_expires_at_ms, actualApple!.status_expires_at_ms] : []),
 			...activeValues(credential, original.operation_id), saved.challenge, decisionExpiry, ...(production ? [credential.id] : []), original.pair_binding,
-			...guard.values, ...(production ? [actualApple!.evidence_expires_at_ms, actualApple!.status_expires_at_ms] : []))
+			...guard.values, ...(production ? [actualApple!.evidence_expires_at_ms, actualApple!.status_expires_at_ms,
+                actualApple!.key_id_b64, actualApple!.public_key_spki_b64] : []))
             .first<{ receipt: string }>();
 		need(result, conflict, 409);
 		return JSON.parse(result.receipt) as typeof receipt;
