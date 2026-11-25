@@ -1293,7 +1293,7 @@ def native_widget_delta():
 
 
 def native_before_bytes(name):
-    raw = counter_previous_bytes(name, safe_path(name).read_bytes())
+    raw = counter_previous_bytes(name, wrangler_4164_previous_bytes(name))
     if name not in NATIVE_WIDGET_CHANGES | NATIVE_WIDGET_REFERENCE_CHANGES:
         return raw
     import base64
@@ -1308,11 +1308,11 @@ def native_installation_delta(sources, references):
     require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
     for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
         for name, change in changes.items():
-            require(target[name] == change['before'] and digest(counter_previous_bytes(name, safe_path(name).read_bytes())) == change['after'])
+            require(target[name] == change['before'] and digest(counter_previous_bytes(name, wrangler_4164_previous_bytes(name))) == change['after'])
             target[name] = change['after']
     for target, additions in ((sources, delta['additions']), (references, delta['reference_additions'])):
         for name, pin in additions.items():
-            require(name not in target and digest(counter_previous_bytes(name, safe_path(name).read_bytes())) == pin)
+            require(name not in target and digest(counter_previous_bytes(name, wrangler_4164_previous_bytes(name))) == pin)
             target[name] = pin
     require(source_map_digest(sources) == delta['effective_source_map_sha256']
         == SOURCE_PROVENANCE['installation_native_widget_source_map_sha256'])
@@ -1367,7 +1367,7 @@ def counter_installation_delta(sources, references):
     require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
     for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
         for name, change in changes.items():
-            require(target[name] == change['before'] and digest(safe_path(name).read_bytes()) == change['after'])
+            require(target[name] == change['before'] and digest(wrangler_4164_previous_bytes(name)) == change['after'])
             target[name] = change['after']
     require(source_map_digest(sources) == delta['effective_source_map_sha256']
         == SOURCE_PROVENANCE['native_widget_counter_integrity_source_map_sha256'])
@@ -1422,7 +1422,7 @@ def ack_installation_delta(sources, references):
     require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
     for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
         for name, change in changes.items():
-            require(target[name] == change['before'] and digest(unique_previous_bytes(name, safe_path(name).read_bytes())) == change['after'])
+            require(target[name] == change['before'] and digest(unique_previous_bytes(name, wrangler_4164_previous_bytes(name))) == change['after'])
             target[name] = change['after']
     require(source_map_digest(sources) == delta['effective_source_map_sha256']
         == SOURCE_PROVENANCE['native_ack_key_bounds_source_map_sha256'])
@@ -1478,10 +1478,10 @@ def unique_installation_delta(sources, references):
     require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
     for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
         for name, change in changes.items():
-            require(target[name] == change['before'] and digest(policy40533_previous_bytes(name, safe_path(name).read_bytes())) == change['after'])
+            require(target[name] == change['before'] and digest(policy40533_previous_bytes(name, wrangler_4164_previous_bytes(name))) == change['after'])
             target[name] = change['after']
     for name, pin in delta['additions'].items():
-        require(name not in sources and digest(safe_path(name).read_bytes()) == pin)
+        require(name not in sources and digest(wrangler_4164_previous_bytes(name)) == pin)
         sources[name] = pin
     require(source_map_digest(sources) == delta['effective_source_map_sha256']
         == SOURCE_PROVENANCE['native_apple_identity_uniqueness_source_map_sha256'])
@@ -1538,10 +1538,10 @@ def policy40533_installation_delta(sources, references):
     require(source_map_digest(sources) == delta['baseline_source_map_sha256'])
     for target, changes in ((sources, delta['changes']), (references, delta['reference_changes'])):
         for name, change in changes.items():
-            require(target[name] == change['before'] and digest(safe_path(name).read_bytes()) == change['after'])
+            require(target[name] == change['before'] and digest(wrangler_4164_previous_bytes(name)) == change['after'])
             target[name] = change['after']
     for name, pin in delta['reference_additions'].items():
-        require(name not in references and digest(safe_path(name).read_bytes()) == pin)
+        require(name not in references and digest(wrangler_4164_previous_bytes(name)) == pin)
         references[name] = pin
     require(source_map_digest(sources) == delta['effective_source_map_sha256']
         == SOURCE_PROVENANCE['native_ios40533_policy_source_map_sha256'])
@@ -1719,7 +1719,7 @@ def shared_governance_previous_bytes(name):
     return raw
 
 
-def baseline():
+def baseline_before_wrangler_4164():
     delta = pinned_working_proof(API_SHARED_GOVERNANCE_DELTA_PATH, API_SHARED_GOVERNANCE_DELTA_SHA256)
     require(set(delta) == {'schema_version', 'scope', 'workflow_changes', 'manifest_changes', 'source_changes', 'reference_changes', 'public_activation_allowed', 'production_effect_authorized'})
     require(type(delta['schema_version']) is int and delta['schema_version'] == 1
@@ -1815,6 +1815,79 @@ def baseline():
                 target[name] = change['after']
     refs[CANONICAL_PIN_DELTA_PATH] = CANONICAL_PIN_DELTA_SHA256
     return policy40533_installation_delta(*unique_installation_delta(*ack_installation_delta(*counter_installation_delta(*native_installation_delta(sources, refs)))))
+
+
+WRANGLER_4164_DELTA_PATH = 'docs/rendezvous/wrangler-4164-toolchain-source-delta-v1.json'
+WRANGLER_4164_DELTA_SHA256 = '097e0869b700c8ee85967bbbe452c305bb0e036755b8430f1afae38d4ea66ef8'
+WRANGLER_4164_SOURCE_MAP_SHA256 = 'cc1552857429152223ba313e6563a4f120adb31de5041677855059d597a6cfd4'
+WRANGLER_4164_PROVENANCE = 'qualification/rendezvous/compatible-runtime-dependency-provenance-v8.json'
+WRANGLER_4164_PREVIOUS_PROVENANCE = 'qualification/rendezvous/compatible-runtime-dependency-provenance-v7.json'
+WRANGLER_4164_PREVIOUS_PROVENANCE_SHA256 = 'da360a3235824c2eb5daba56ff46be0627e85645a4714ce3dd34ff9c06ddd0f1'
+WRANGLER_4164_REFERENCES = API_SHARED_GOVERNANCE_MANIFESTS - {'coordinator/source-manifest.json'}
+SOURCE_PROVENANCE.update(wrangler_4164_delta_sha256=WRANGLER_4164_DELTA_SHA256,
+                         wrangler_4164_source_map_sha256=WRANGLER_4164_SOURCE_MAP_SHA256)
+
+
+def wrangler_4164_delta():
+    delta = pinned_working_proof(WRANGLER_4164_DELTA_PATH, WRANGLER_4164_DELTA_SHA256)
+    require(set(delta) == {'schema_version', 'scope', 'base_source', 'baseline_source_map_sha256',
+                           'effective_source_map_sha256', 'changes', 'reference_changes',
+                           'reference_additions', 'public_activation_allowed'}
+            and type(delta['schema_version']) is int and delta['schema_version'] == 1
+            and delta['scope'] == 'EXACT_WRANGLER_4164_TOOLCHAIN_REFRESH_NOT_ACTIVATION'
+            and delta['base_source'] == '4ace9ae7d9224411212ae1138b96fd75914cadde'
+            and delta['public_activation_allowed'] is False
+            and set(delta['changes']) == WRANGLER_4160_SOURCES
+            and set(delta['reference_changes']) == WRANGLER_4164_REFERENCES
+            and set(delta['reference_additions']) == {WRANGLER_4164_PROVENANCE})
+    return delta
+
+
+def wrangler_4164_previous_bytes(name):
+    raw = safe_path(name).read_bytes()
+    if name not in WRANGLER_4160_SOURCES | WRANGLER_4164_REFERENCES:
+        return raw
+    delta = wrangler_4164_delta()
+    change = delta['changes'].get(name) or delta['reference_changes'][name]
+    require(set(change) == {'before', 'after', 'revert'} and change['before'] != change['after']
+            and digest(raw) == change['after'] and isinstance(change['revert'], list) and change['revert'])
+    previous_offset = len(raw) + 1
+    for edit in reversed(change['revert']):
+        require(set(edit) == {'offset', 'remove', 'restore'} and type(edit['offset']) is int
+                and type(edit['remove']) is int and isinstance(edit['restore'], str))
+        offset, count = edit['offset'], edit['remove']
+        require(0 <= offset < previous_offset and 0 <= count
+                and offset + count <= min(previous_offset, len(raw)))
+        raw = raw[:offset] + edit['restore'].encode('utf-8') + raw[offset + count:]
+        previous_offset = offset
+    require(digest(raw) == change['before'])
+    return raw
+
+
+def baseline():
+    sources, refs = baseline_before_wrangler_4164()
+    delta = wrangler_4164_delta()
+    require(delta['baseline_source_map_sha256'] == source_map_digest(sources))
+    for target, changes in ((sources, delta['changes']), (refs, delta['reference_changes'])):
+        for name, change in changes.items():
+            require(target[name] == change['before'] == digest(wrangler_4164_previous_bytes(name)))
+            target[name] = change['after']
+    require(delta['effective_source_map_sha256'] == source_map_digest(sources) == WRANGLER_4164_SOURCE_MAP_SHA256)
+    old = pinned_working_proof(WRANGLER_4164_PREVIOUS_PROVENANCE, WRANGLER_4164_PREVIOUS_PROVENANCE_SHA256)
+    new_pin = delta['reference_additions'][WRANGLER_4164_PROVENANCE]
+    new = pinned_working_proof(WRANGLER_4164_PROVENANCE, new_pin)
+    require(new['scope'] == delta['scope'] and new['previous_provenance_sha256'] == WRANGLER_4164_PREVIOUS_PROVENANCE_SHA256
+            and new['previous_lock_sha256'] == old['dependency_lock_sha256'] == delta['changes']['package-lock.json']['before']
+            and new['dependency_lock_sha256'] == sources['package-lock.json']
+            and new['installed_inputs_sha256'] == old['installed_inputs_sha256']
+            and new['installed_changes'] == {} and new['unchanged_installed_inputs'] == 50
+            and new['real_native_or_production_effect'] is False)
+    require(WRANGLER_4164_PROVENANCE not in refs and WRANGLER_4164_DELTA_PATH not in refs)
+    require(WRANGLER_4164_PREVIOUS_PROVENANCE not in refs)
+    refs[WRANGLER_4164_PREVIOUS_PROVENANCE] = WRANGLER_4164_PREVIOUS_PROVENANCE_SHA256
+    refs[WRANGLER_4164_PROVENANCE] = new_pin
+    refs[WRANGLER_4164_DELTA_PATH] = WRANGLER_4164_DELTA_SHA256
+    return sources, refs
 
 
 def validate(plan):
