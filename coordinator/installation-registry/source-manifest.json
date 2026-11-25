@@ -3,7 +3,7 @@
   "parent": "13cb4f3ef82e16e6f4998f68cd5d867fdf8fc1c5",
   "design_sha256": "7b44758c5f7bba76dd3f61b042a776330ee25697523d3bd05248a5697f76db4b",
   "esbuild_version": "0.28.1",
-  "wrangler_version": "4.160.0",
+  "wrangler_version": "4.164.0",
   "wrangler_schema_sha256": "fdf17b1ee9a637182af0678cd3725ad2845e63394fec9cb324765b4ec9ae46d0",
   "inputs_sha256": {
     ".github/workflows/installation-registry-transactions.yml": "301b51fcb39d5a8a11b2b8a4eba78f3816b37efacb2fef8403825cf130cd5f3e",
@@ -23,7 +23,7 @@
     "coordinator/installation-registry/registry.ts": "b72c478f6fe2edf39946c49d0a0c7409055dcd4c836745db3ee44212128c630c",
     "coordinator/installation-registry/worker.ts": "9d793d7693bed6848ecc4d90ab3d1a9691b5431d9f22a36a2c5a91e71343fcf7",
     "coordinator/principal-possession/possession-data.ts": "bca90cf8cafa4200fa7495b3d28fda37c10a4b94031b4c39317add9f82c9687d",
-    "package-lock.json": "20f73ac58391eeef484b610426b1e2adc5c39775ed6bd9fd052ad66f129c46eb",
+    "package-lock.json": "caef9a00f2feb228f310ef624914677093fce237e090ae67becc347d3d07de96",
     "src/surface-push/wire.ts": "d4f255431b4429b724455e347841e992aef8f639a2b7799dfb510752cdb834b7",
     "tsconfig.json": "b9af33bf62df4bb042dac95a67505f2500c3588bdea9286d6627d0cf68a47d40",
     "worker-configuration.d.ts": "1003bdb1be07ff380278e6713b08768d41be6c98ee21dcfaf799b9c2c4441738"

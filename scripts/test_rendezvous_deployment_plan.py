@@ -89,6 +89,20 @@ class PreparationTests(unittest.TestCase):
         self.assertIs(out['activation_allowed'], False)
         self.assertEqual(out['open_gate_count'], 22)
 
+    def test_wrangler_refresh_retains_historical_bytes_and_rejects_tampering(self):
+        delta = v.wrangler_4164_delta()
+        for name, change in {**delta['changes'], **delta['reference_changes']}.items():
+            with self.subTest(source=name):
+                self.assertEqual(v.digest(v.wrangler_4164_previous_bytes(name)), change['before'])
+        safe_path = v.safe_path
+        with tempfile.TemporaryDirectory() as directory:
+            modified = Path(directory) / 'modified'
+            for name in (v.WRANGLER_4164_DELTA_PATH, v.WRANGLER_4164_PREVIOUS_PROVENANCE,
+                         v.WRANGLER_4164_PROVENANCE, 'package-lock.json'):
+                modified.write_bytes((v.ROOT / name).read_bytes() + b'\n')
+                with self.subTest(source=name), patch.object(v, 'safe_path', side_effect=lambda path: modified if path == name else safe_path(path)):
+                    self.rejects(self.plan)
+
     def test_protected_supplier_survives_squash_and_branch_cleanup(self):
         # Model main checkout with no PR/intermediate history or object fallback.
         with tempfile.TemporaryDirectory() as name:
@@ -140,6 +154,8 @@ class PreparationTests(unittest.TestCase):
                          v.ORG_OPERATIONAL_MANIFEST_PATH_DELTA,
                          *v.WRANGLER_4160_SOURCES, *v.WRANGLER_4160_REFERENCES,
                          v.WRANGLER_4160_PROVENANCE, v.WRANGLER_4160_DELTA_PATH,
+                         v.WRANGLER_4164_PROVENANCE, v.WRANGLER_4164_PREVIOUS_PROVENANCE,
+                         v.WRANGLER_4164_DELTA_PATH,
                          *v.ORG_GOVERNANCE_SOURCES, *v.ORG_GOVERNANCE_REFERENCES,
                          v.ORG_GOVERNANCE_DELTA_PATH,
                          v.POLICY40533_DELTA_PATH, *v.POLICY40533_REFERENCE_ADDITIONS, v.CANONICAL_PIN_DELTA_PATH, v.NATIVE_WIDGET_DELTA_PATH, v.COUNTER_WIDGET_DELTA_PATH, v.ACK_BOUNDS_DELTA_PATH, v.UNIQUE_APPLE_DELTA_PATH, *v.UNIQUE_APPLE_ADDITIONS, *v.NATIVE_WIDGET_CHANGES, *v.NATIVE_WIDGET_ADDITIONS, *v.NATIVE_WIDGET_REFERENCE_CHANGES, *v.NATIVE_WIDGET_REFERENCE_ADDITIONS, v.API_CORE_IDENTITY_DELTA_PATH, v.API_ORG_RELEASE_DELTA_PATH, v.API_ORG_CORE_AUTHORITY_DELTA_PATH,
@@ -174,6 +190,8 @@ class PreparationTests(unittest.TestCase):
             pinned.update({name: change['after'] for name, change in {**unique_delta['changes'], **unique_delta['reference_changes']}.items()})
             policy_delta = v.policy40533_delta()
             pinned.update({name: change['after'] for name, change in {**policy_delta['changes'], **policy_delta['reference_changes']}.items()})
+            toolchain_delta = v.wrangler_4164_delta()
+            pinned.update({name: change['after'] for name, change in {**toolchain_delta['changes'], **toolchain_delta['reference_changes']}.items()})
             for path in additions:
                 raw = (canonical / path).read_bytes()
                 expected = pinned[path]

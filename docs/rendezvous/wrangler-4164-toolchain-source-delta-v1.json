@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "scope": "EXACT_WRANGLER_4164_TOOLCHAIN_REFRESH_NOT_ACTIVATION",
+  "base_source": "4ace9ae7d9224411212ae1138b96fd75914cadde",
+  "baseline_source_map_sha256": "60d8a89d9d7136e83aea913deeb77ee7614f39342a0c6891e6d88347ca4de685",
+  "effective_source_map_sha256": "cc1552857429152223ba313e6563a4f120adb31de5041677855059d597a6cfd4",
+  "changes": {
+    "package-lock.json": {
+      "before": "20f73ac58391eeef484b610426b1e2adc5c39775ed6bd9fd052ad66f129c46eb",
+      "after": "caef9a00f2feb228f310ef624914677093fce237e090ae67becc347d3d07de96",
+      "revert": [
+        {
+          "offset": 514,
+          "remove": 31,
+          "restore": "        \"wrangler\": \"^4.160.0\"\n"
+        },
+        {
+          "offset": 127582,
+          "remove": 226,
+          "restore": "      \"version\": \"4.160.0\",\n      \"resolved\": \"https://registry.npmjs.org/wrangler/-/wrangler-4.160.0.tgz\",\n      \"integrity\": \"sha512-nwzmpu7Hd5Csax02twpCNRAloC+kduXKw9rjfq+oEuo8RnjWRaahSV+qk+p0w88EgafMcDE0XnZRSfOM3lKEKg==\",\n"
+        },
+        {
+          "offset": 128095,
+          "remove": 42,
+          "restore": "        \"miniflare\": \"5.20261110.0-beta\",\n"
+        },
+        {
+          "offset": 128204,
+          "remove": 34,
+          "restore": "        \"workerd\": \"1.20261110.1\"\n"
+        },
+        {
+          "offset": 128547,
+          "remove": 53,
+          "restore": "        \"@cloudflare/workers-types\": \"^5.20261110.1\"\n"
+        },
+        {
+          "offset": 129394,
+          "remove": 266,
+          "restore": "      \"version\": \"1.20261110.1\",\n      \"resolved\": \"https://registry.npmjs.org/@cloudflare/workerd-darwin-64/-/workerd-darwin-64-1.20261110.1.tgz\",\n      \"integrity\": \"sha512-RazOdADqTgwYhE60+i6c/R5BA1J5aC//39oousnWBxmoVAiqUh1qsXNCGMbaEV6UC5RnZyWsIBRIcAYNDe1xTg==\",\n"
+        },
+        {
+          "offset": 129946,
+          "remove": 272,
+          "restore": "      \"version\": \"1.20261110.1\",\n      \"resolved\": \"https://registry.npmjs.org/@cloudflare/workerd-darwin-arm64/-/workerd-darwin-arm64-1.20261110.1.tgz\",\n      \"integrity\": \"sha512-TFsn/t+wczWnWdm+ytlWe+xHEO9sDgfIBmtMo8OxujuS2DXCmGimiyvJHmuv+6+N9OhUb0dM+fveXJI9yjuzew==\",\n"
+        },
+        {
+          "offset": 130502,
+          "remove": 264,
+          "restore": "      \"version\": \"1.20261110.1\",\n      \"resolved\": \"https://registry.npmjs.org/@cloudflare/workerd-linux-64/-/workerd-linux-64-1.20261110.1.tgz\",\n      \"integrity\": \"sha512-i4080Pp6Q0nwS8OMqt3cbpJoWvbCrIlFKa+4Inbn+y2pWKTVsq6F9bgdi0l8CBZPMszd03gDlQR++dqMbErh2Q==\",\n"
+        },
+        {
+          "offset": 131050,
+          "remove": 270,
+          "restore": "      \"version\": \"1.20261110.1\",\n      \"resolved\": \"https://registry.npmjs.org/@cloudflare/workerd-linux-arm64/-/workerd-linux-arm64-1.20261110.1.tgz\",\n      \"integrity\": \"sha512-0l+JyYWOhEzTs7yOkIdf1ZzcXd9WalPZ1kD0bBAobFvDhO/1jBnQkS4rzzyUkGV7g8pb3dkfrBP9c2ZiRLOfdw==\",\n"
+        },
+        {
+          "offset": 131605,
+          "remove": 268,
+          "restore": "      \"version\": \"1.20261110.1\",\n      \"resolved\": \"https://registry.npmjs.org/@cloudflare/workerd-windows-64/-/workerd-windows-64-1.20261110.1.tgz\",\n      \"integrity\": \"sha512-zP8IGyWvohyJhbNjHOnTA9anRQtGN7X01T/dG+R9IA4vu2egRODsD02aoYzv0a0qImjt7tTpOOA+uVotDJPcSA==\",\n"
+        },
+        {
+          "offset": 146947,
+          "remove": 248,
+          "restore": "      \"version\": \"5.20261110.0-beta\",\n      \"resolved\": \"https://registry.npmjs.org/miniflare/-/miniflare-5.20261110.0-beta.tgz\",\n      \"integrity\": \"sha512-UiJRL6D4pNkHxgZ3QXDCaz/N27FFuuHRRgOmD/SucEZIwDOfWwX7s/n8ZrFemFlURRfnQpBfAdWy8ixsW0yJWA==\",\n"
+        },
+        {
+          "offset": 147367,
+          "remove": 35,
+          "restore": "        \"workerd\": \"1.20261110.1\",\n"
+        },
+        {
+          "offset": 147748,
+          "remove": 234,
+          "restore": "      \"version\": \"1.20261110.1\",\n      \"resolved\": \"https://registry.npmjs.org/workerd/-/workerd-1.20261110.1.tgz\",\n      \"integrity\": \"sha512-GKdtki7t19f16vegol8Iw5Dh0mnjHLuwLx8rlhTPvyRBEXM0Osl9eYexWAW8uZD7OMw4WKNq9yvENg5kPDUJ9w==\",\n"
+        },
+        {
+          "offset": 148204,
+          "remove": 289,
+          "restore": "        \"@cloudflare/workerd-darwin-64\": \"1.20261110.1\",\n        \"@cloudflare/workerd-darwin-arm64\": \"1.20261110.1\",\n        \"@cloudflare/workerd-linux-64\": \"1.20261110.1\",\n        \"@cloudflare/workerd-linux-arm64\": \"1.20261110.1\",\n        \"@cloudflare/workerd-windows-64\": \"1.20261110.1\"\n"
+        }
+      ]
+    },
+    "package.json": {
+      "before": "fd2181aef21d925fb0c1c62d32e582bead0f814a638e8bbc6e4a7ff988e4ba96",
+      "after": "2e766e0433100a62061272262bdba6b7563d97ab3c62df7d4fbed5beaae87614",
+      "revert": [
+        {
+          "offset": 1312,
+          "remove": 27,
+          "restore": "    \"wrangler\": \"^4.160.0\"\n"
+        },
+        {
+          "offset": 1602,
+          "remove": 34,
+          "restore": "    \"workerd@1.20261110.1\": true,\n"
+        }
+      ]
+    },
+    "scripts/qualify_rendezvous_product_build.mjs": {
+      "before": "8edf85b7e17f97122dc67f7dd2b774d92d0da943131cb18e454f882b577d221d",
+      "after": "c257ebf0ea42b2d83f2aa93e602648d63d1d234bb80da38b274dc87e3b3f1526",
+      "revert": [
+        {
+          "offset": 3094,
+          "remove": 74,
+          "restore": "\tfor(const file of ['compatible-runtime-dependency-provenance-v7.json']){\n"
+        },
+        {
+          "offset": 3899,
+          "remove": 495,
+          "restore": "\tfor(const file of ['src/index.ts','src/rendezvous/perimeter.ts','src/rendezvous/coordinators.ts','src/rendezvous/trust.ts','package.json','package-lock.json','wrangler.jsonc','tsconfig.json','vitest.config.mts','rendezvous-build-inputs.json','scripts/qualify_rendezvous_product_build.mjs','qualification/rendezvous/compatible-runtime-dependency-provenance-v3.json','qualification/rendezvous/compatible-runtime-dependency-provenance-v7.json'])sources[file]=sha(await readFile(join(repo,file)));\n"
+        }
+      ]
+    }
+  },
+  "reference_changes": {
+    "coordinator/host-app-wake-receiving/runtime/source-inputs.json": {
+      "before": "f0b6d727c29ca739b37759adeb545febd5fb89b95efc74406fa09b9223e7875b",
+      "after": "3d7c66469cc1091f1afb65a5b28b5715b2b67dfc2837b677d6dc5469fd879477",
+      "revert": [
+        {
+          "offset": 23796,
+          "remove": 409,
+          "restore": "    \"node_modules/wrangler/package.json\": \"bdb9204c2477ef9005ea62e5c75cec71b4886d28781c89bbd50ab291bda2edf2\",\n    \"node_modules/wrangler/wrangler-dist/cli.js\": \"54858926e361c12afe0a1404ed249abee4b800a7fc4e018398a7ae4cda2fd84f\",\n    \"package-lock.json\": \"20f73ac58391eeef484b610426b1e2adc5c39775ed6bd9fd052ad66f129c46eb\",\n    \"package.json\": \"fd2181aef21d925fb0c1c62d32e582bead0f814a638e8bbc6e4a7ff988e4ba96\",\n"
+        }
+      ]
+    },
+    "coordinator/host-app-wake/source-manifest.json": {
+      "before": "07ca7491b56bd8b91fcd75647947a2ad9952201bfceb44bdb1b97673a732b3a0",
+      "after": "d44246da056923d80a4b2e67d7546f59d4e770afa820dbc9ee00fa06d4b823d7",
+      "revert": [
+        {
+          "offset": 1977,
+          "remove": 181,
+          "restore": "    \"package-lock.json\": \"20f73ac58391eeef484b610426b1e2adc5c39775ed6bd9fd052ad66f129c46eb\",\n    \"package.json\": \"fd2181aef21d925fb0c1c62d32e582bead0f814a638e8bbc6e4a7ff988e4ba96\",\n"
+        }
+      ]
+    },
+    "coordinator/installation-principal/source-manifest.json": {
+      "before": "ab5d13673daa363e6061c2f2358ea973bc8f29a213944770c4576883cecffcfa",
+      "after": "05f39e78da07cca2bda1863aa6847fc00af175733fed501eb9ab66039033d419",
+      "revert": [
+        {
+          "offset": 2800,
+          "remove": 181,
+          "restore": "    \"package-lock.json\": \"20f73ac58391eeef484b610426b1e2adc5c39775ed6bd9fd052ad66f129c46eb\",\n    \"package.json\": \"fd2181aef21d925fb0c1c62d32e582bead0f814a638e8bbc6e4a7ff988e4ba96\",\n"
+        }
+      ]
+    },
+    "coordinator/installation-registry/source-manifest.json": {
+      "before": "baa22ec0e2b6f539d92d667b852566bf141f56655bfbf2a504c70b0072374289",
+      "after": "5bb9dceee74f74fc549965b1f31f4c68d0068f589ed025f53c8c7abf1928859a",
+      "revert": [
+        {
+          "offset": 240,
+          "remove": 33,
+          "restore": "  \"wrangler_version\": \"4.160.0\",\n"
+        },
+        {
+          "offset": 2631,
+          "remove": 93,
+          "restore": "    \"package-lock.json\": \"20f73ac58391eeef484b610426b1e2adc5c39775ed6bd9fd052ad66f129c46eb\",\n"
+        }
+      ]
+    },
+    "coordinator/principal-possession/source-manifest.json": {
+      "before": "3bf4eea7248c3f74f0a7cd9a29debda6b852e9aaffd730595060aeddffcf8e8b",
+      "after": "0402e8c08190b17b1c7a3afd060e2701161ddd7ea0f61ac212e6c7646ad4aea8",
+      "revert": [
+        {
+          "offset": 1645,
+          "remove": 93,
+          "restore": "    \"package-lock.json\": \"20f73ac58391eeef484b610426b1e2adc5c39775ed6bd9fd052ad66f129c46eb\",\n"
+        }
+      ]
+    },
+    "coordinator/rich-delivery/source-manifest.json": {
+      "before": "5aaaadfcf6230ef6d0fc01e7f8cd1c3b71e207beeb6648ebce455eb3494f0078",
+      "after": "fcce78a0c681595094c64617214efa732ada1948d3c1c790152c4104dc49f786",
+      "revert": [
+        {
+          "offset": 1956,
+          "remove": 180,
+          "restore": "    \"package-lock.json\": \"20f73ac58391eeef484b610426b1e2adc5c39775ed6bd9fd052ad66f129c46eb\",\n    \"package.json\": \"fd2181aef21d925fb0c1c62d32e582bead0f814a638e8bbc6e4a7ff988e4ba96\"\n"
+        }
+      ]
+    },
+    "coordinator/rich-session/source-manifest.json": {
+      "before": "1629aaa55ede7c400d7b4ab8c7559fc093f9423c939b3d233ef67562d868fba9",
+      "after": "ed530727fc80c554aae1bf0bb478fba5c5b15362fe0e08a8eed83220fb2660dc",
+      "revert": [
+        {
+          "offset": 7590,
+          "remove": 93,
+          "restore": "    \"package-lock.json\": \"20f73ac58391eeef484b610426b1e2adc5c39775ed6bd9fd052ad66f129c46eb\",\n"
+        }
+      ]
+    },
+    "coordinator/worker-do/source-manifest.json": {
+      "before": "b85e50464a5d55a4bbcf3a93d84ae55540ad839ae49205c523969780f54beaef",
+      "after": "055a00fca9ef71612d9f5a32cf9d098fedbc0d36b573934f8e82a796ca1685cd",
+      "revert": [
+        {
+          "offset": 417,
+          "remove": 33,
+          "restore": "  \"wrangler_version\": \"4.160.0\",\n"
+        },
+        {
+          "offset": 1742,
+          "remove": 93,
+          "restore": "    \"package-lock.json\": \"20f73ac58391eeef484b610426b1e2adc5c39775ed6bd9fd052ad66f129c46eb\",\n"
+        }
+      ]
+    },
+    "qualification/watch-moment/source-manifest.json": {
+      "before": "9dc42edab33102e0bbb04ebe5f2ce39bef9a98b53c7a784c4112b8f428ae3481",
+      "after": "a55585071d633d826063b75366f7a8faf627e0613a4b1b8d9d5020504ad3ae17",
+      "revert": [
+        {
+          "offset": 850,
+          "remove": 181,
+          "restore": "    \"package-lock.json\": \"20f73ac58391eeef484b610426b1e2adc5c39775ed6bd9fd052ad66f129c46eb\",\n    \"package.json\": \"fd2181aef21d925fb0c1c62d32e582bead0f814a638e8bbc6e4a7ff988e4ba96\",\n"
+        }
+      ]
+    }
+  },
+  "reference_additions": {
+    "qualification/rendezvous/compatible-runtime-dependency-provenance-v8.json": "6ad440523b8094a271fe6e7cdc3cb34270a4da8f0d9cd5c2f724cfdd0d3be2b2"
+  },
+  "public_activation_allowed": false
+}

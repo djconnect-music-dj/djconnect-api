@@ -45,7 +45,7 @@ class NativeWidgetSourceDeltaTests(unittest.TestCase):
         delta = v.counter_widget_delta()
         self.assertEqual(len(delta['changes']), 2)
         for name, change in {**delta['changes'], **delta['reference_changes']}.items():
-            raw = (v.ROOT / name).read_bytes()
+            raw = v.wrangler_4164_previous_bytes(name)
             self.assertEqual(v.digest(v.counter_previous_bytes(name, raw)), change['before'])
             with self.assertRaises(ValueError):
                 v.counter_previous_bytes(name, raw + b'\n')
