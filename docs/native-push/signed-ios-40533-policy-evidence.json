@@ -1,0 +1,35 @@
+{
+  "apple_source": "60fd1157207dfb0f8cc7fe5fbf3acfd26fd3ef58",
+  "application": {
+    "app_identifier": "ZEML4LPXH4.dev.djconnect.ios",
+    "appattest_environment": "development",
+    "aps_environment": "development",
+    "build": "40533",
+    "bundle_id": "dev.djconnect.ios",
+    "executable_sha256": "b455a8ad75e7b8214b4e2feefb85fdffdbf71b1e66a2ad7323ba5efd2ca9450d",
+    "get_task_allow": true,
+    "relative_path": "DJConnect.app",
+    "team_id": "ZEML4LPXH4",
+    "version": "4.1.0"
+  },
+  "category_observed_in_actual_apple_proof": false,
+  "classification": "ACTUAL_STATIC_SIGNED_ARTIFACT_NOT_APP_ATTEST_OR_NATIVE_ADMISSION",
+  "codesign_deep_strict": true,
+  "installation_or_native_clock_admission_from_metadata": false,
+  "policy_expires_at": "2026-12-23T10:00:00Z",
+  "selected_policy_id": "ios-native-push-development-40533/1",
+  "server_category_expectation_b64": "AwAAAA==",
+  "signed_manifest_sha256": "1d83d30268176f56f4a6f398bee2e38f50df292f67f76b90d55b928cd4611741",
+  "widget": {
+    "app_identifier": "ZEML4LPXH4.dev.djconnect.ios.track-insight-widget",
+    "appattest_environment": null,
+    "aps_environment": "development",
+    "build": "40533",
+    "bundle_id": "dev.djconnect.ios.track-insight-widget",
+    "executable_sha256": "c993dde62de082aa6cd9fa42edf0f8bdf36f9dde6fc5a5d10d5b79d1b8ef7bde",
+    "get_task_allow": true,
+    "relative_path": "DJConnect.app/PlugIns/DJConnectWidget.appex",
+    "team_id": "ZEML4LPXH4",
+    "version": "4.1.0"
+  }
+}

@@ -1,9 +1,8 @@
-import {createMomentTransport} from "../../../src/watch-moment/service";
+import {createOwnedWatchMoment} from "../../../src/watch-lifecycle/owned-moment";
 import {createWatchRetirementHttp} from "../../../src/watch-lifecycle/retirement-http";
 import {resolveWatchRetirementScope} from "../../../src/watch-lifecycle/registry-scope";
 import {sha256Hex} from "../../../src/crypto";
 import {canonical} from "../../../src/watch-moment/wire";
-import {createRestoredWatchSender} from "../../../src/watch-lifecycle/restore-dispatch";
 import {WatchDispatchFence} from "../../../src/watch-lifecycle/dispatch-fence";
 import {watchRestoreActorName,watchDispatchActorName} from "../../../src/watch-lifecycle/dispatch-identity";
 import { DurableObject } from "cloudflare:workers";
@@ -37,9 +36,11 @@ export class DispatchActor extends DurableObject {
       case "/ready": return Response.json(this.release !== undefined);
       case "/resume": this.release?.(); return Response.json(true);
       case "/count": return Response.json(this.ctx.storage.sql.exec("SELECT count(*) AS count FROM starts").one().count);
+      case "/receipt": return Response.json(this.ctx.storage.sql.exec("SELECT event_id,session_id,moment_id FROM alert_targets").toArray()[0] ?? null);
       case "/send": {
         const sql = this.ctx.storage.sql;
         sql.exec("CREATE TABLE IF NOT EXISTS starts (id INTEGER PRIMARY KEY)");
+        sql.exec("CREATE TABLE IF NOT EXISTS alert_targets (event_id TEXT, session_id TEXT, moment_id TEXT)");
         const db = new Proxy(env.DB, {
           get: (target, property) => {
             if (property !== "prepare") return Reflect.get(target, property, target);
@@ -55,17 +56,18 @@ export class DispatchActor extends DurableObject {
           },
         });
         const now = Date.now();
-        const send = createRestoredWatchSender({...payload.env, DB:db}, this.ctx, env.ACTOR,
-          scope, () => now, async () => {
-            sql.exec("INSERT INTO starts VALUES (NULL)");
-            return new Response("{}", {status:200});
-          });
-        const service = createMomentTransport({
-          db, now:()=>now, send, assertCurrent(){},
+        const service = createOwnedWatchMoment({
+          env: {...payload.env, DB:db}, actor: this.ctx, namespace: env.ACTOR,
+          scope, now:()=>now, assertCurrent(){},
           limits:{capacity:16,installationCapacity:12,recipientBurst:5},
           async admit(event) { return {event_hash:await sha256Hex(canonical(event)),
             recipient_binding:"b".repeat(64),registration_binding:"c".repeat(64),
             eligible_since_ms:now-10000,expires_at_ms:now+30000,registration:payload.registration}; },
+        }, async (_input, init) => {
+          const alert = JSON.parse(String(init?.body));
+          sql.exec("INSERT INTO alert_targets VALUES (?,?,?)", alert.event_id, alert.session_id, alert.moment_id);
+          sql.exec("INSERT INTO starts VALUES (NULL)");
+          return new Response("{}", {status:200});
         });
         return Response.json((await service.dispatch(payload.event, new AbortController().signal)).state);
       }
@@ -90,6 +92,7 @@ export class DispatchActor extends DurableObject {
       default: {
         const sql = this.ctx.storage.sql;
         sql.exec("CREATE TABLE IF NOT EXISTS starts (id INTEGER PRIMARY KEY)");
+        sql.exec("CREATE TABLE IF NOT EXISTS alert_targets (event_id TEXT, session_id TEXT, moment_id TEXT)");
         const result = authority.start(scope, payload, () => sql.exec("INSERT INTO starts VALUES (NULL)"));
         return Response.json(result !== null);
       }

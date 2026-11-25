@@ -1,61 +1,20 @@
-# DJConnect Repository Status
+# API Repository Status
 
-Status: Active engineering repository
+Repository `djconnect-music-dj/djconnect-api`, immutable ID `1275206655`. Core owns product/session authority; this repository implements the Worker trust and relay boundary.
 
-## Repository
+## Source predecessor
 
-`djconnect-music-dj/djconnect-api`
+[API #279](https://github.com/djconnect-music-dj/djconnect-api/pull/279) merged exact reviewed `a1ba44ec2b8ca4e4ff7af59632d014f984a80d81` at `4838160f5cf714b12530e727436b9b4dc36b391c`. Their trees are identical. The Worker now contains the installation-owned paired native Widget enrollment and reauthorization ports. Actual installation credential, original pair/current consent, genuine native proof, atomic counter and separate role/purpose provenance remain required; missing or stale authority fails closed.
 
-## Role
+At this Finalization's freeze point, the source predecessor remains `MERGED_UNRECONCILED`. **Prospective target only:** `MERGED_RECONCILED` becomes effective only after this separate Finalization's protected merge and its own exact-main CI and automatic internal publication PASS. No own-main qualification of this Finalization is claimed here.
 
-central API trust/relay boundary, APNs relay, per-install token bootstrap and future entitlement/profile-cloud surfaces.
+## Execution Horizon
 
-## Ownership
+1. Complete this separate Finalization and verify its exact-main required checks, immutable artifact and automatic internal publication.
+2. Qualify separately selected Core/Apple native consumer, original SDK/clock/target and actual provider/device paths before any push acceptance.
+3. Obtain a current manifest-bound artifact, migration/rollback and deployment decision for any future API production update; this Finalization does not deploy.
+4. Preserve all original source and historical operational proof, including source 278 extra APT failure; later qualification does not relabel earlier executions.
 
-Owns: central API implementation, Cloudflare Worker runtime, APNs relay, per-install token bootstrap and API-owned localized display-message mapping.
+Source, internal publication, deployment and physical/native acceptance remain separate. Historical proof files are unchanged. All 22 historical operational gates remain OPEN. The signed 40533 tuple selects a bounded server policy; expected category 3 is not an observed Apple attestation.
 
-Does not own: local-first Community runtime behavior, Home Assistant integration implementation, native client UX or canonical foundation docs.
-
-## Current Phase
-
-RG-API-001: Version 2.2 governance adoption. Documentation only.
-
-## Status
-
-Governance adoption in progress.
-
-## Blocking Dependencies
-
-- Cross-repository completion depends on all active DJConnect repositories being
-  aligned and reviewed.
-- Pull request creation requires network/GitHub access and maintainer approval
-  from the local environment.
-
-## Current Prompt
-
-API governance adoption
-
-## Completion Report
-
-Local governance branch and immutable Prompt History.
-
-## Last Qualification
-
-No repository-local verification qualification was executed for this
-documentation-only bootstrap alignment pass.
-
-## Validated Base SHA
-
-`7a1fca036b600a4224091343fedf188919d31b2b`
-
-This value records the repository SHA inspected at the start of the
-repository-local bootstrap alignment pass.
-
-## Repository-Local Next Action
-
-Review and merge the repository-local bootstrap alignment branch, then keep
-future work scoped to this repository's ownership boundary.
-
-## Notes
-
-Cloudflare/API/security rules remain in AGENTS.md and are authoritative for API-specific work.
+[Immutable source reconciliation](docs/history/prompts/2026-11-24-api-native-widget-finalization.md) and [machine evidence](docs/rendezvous/api-native-widget-finalization-20261124.json) preserve exact own-main results.

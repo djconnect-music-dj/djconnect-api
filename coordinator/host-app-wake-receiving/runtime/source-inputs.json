@@ -12,6 +12,7 @@
     "coordinator/host-app-wake-receiving/authorization-resolve.ts",
     "coordinator/host-app-wake-receiving/guard-schema.ts",
     "coordinator/host-app-wake-receiving/native-apple-evidence.mjs",
+    "coordinator/host-app-wake-receiving/native-assertion-crypto.ts",
     "coordinator/host-app-wake-receiving/native-assertion.ts",
     "coordinator/host-app-wake-receiving/native-attestation.ts",
     "coordinator/host-app-wake-receiving/native-policy-store.ts",
@@ -191,7 +192,7 @@
     "schema/source181.sql"
   ],
   "inputs_sha256": {
-    ".github/workflows/host-app-wake-receiving.yml": "e84e48af21685efe2f7c01282b7fa73061bc1d5c9725831ca58d8fe5fc4de0e8",
+    ".github/workflows/host-app-wake-receiving.yml": "b5b58104dedb47a98b8bd3eef64ffeb0a9f2a9eec4a22f604c7bafd251bcc843",
     "LICENSE": "9056c5ecea9aa888ff0a79e9b07a91470a5c2e782dc9ba1774dce70aae031d44",
     "THIRD_PARTY_NOTICES.md": "432e039c4f87dcb2d934adf01a66340a0070ed2b3172484d24d2d99a1b7a8b32",
     "coordinator/host-app-wake-receiving/authorization-resolve.ts": "f4ad510f625fb557c700a475157f0530796dfb84fa2d3179b68a06c52426a744",
@@ -201,7 +202,8 @@
     "coordinator/host-app-wake-receiving/issuer-guard.sql": "8f17457bf6f237ecf35dac2432b4551d47bfae8c0d11f68d1e90b9c1e24044de",
     "coordinator/host-app-wake-receiving/native-apple-evidence.d.mts": "7d60bc44cf54d739c5b9085768e1e87386c48d1b29c75d42517dd5ccf76291a5",
     "coordinator/host-app-wake-receiving/native-apple-evidence.mjs": "3c2f7a7e322e524b986d71e0f6c71bb55b86dc6ecf4970ae3dca51f7e1a88434",
-    "coordinator/host-app-wake-receiving/native-assertion.ts": "899fd463e5e3f7b601385fe2b2d38b74c3ad32aad74dc386c55cd121c7e96851",
+    "coordinator/host-app-wake-receiving/native-assertion-crypto.ts": "8871980641185cf7cbb97985cb547cc317861c34e0d236af849d130b27186431",
+    "coordinator/host-app-wake-receiving/native-assertion.ts": "1db039ae40f26b4fb78df1136a6addd92a320954b9abaff66686f34372e2f4d7",
     "coordinator/host-app-wake-receiving/native-attestation.ts": "971209abbcdceb029b9e07d5fb936ec3c5d59b229c8bb42ebff3a91dd20e60a3",
     "coordinator/host-app-wake-receiving/native-first-job-guard.sql": "cb5462532981462511bd35f9536be583376a31c5f048659480c1e4b885a3114a",
     "coordinator/host-app-wake-receiving/native-first-proof-guard.sql": "bc8b44d715b56b6eafc17824b1af4a6fa5df5b178b648a683b121e0c3b691014",

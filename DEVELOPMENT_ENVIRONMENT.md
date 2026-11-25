@@ -246,3 +246,17 @@ Not allowed:
   `./cleanup_old_releases.sh --keep 1 --execute` after the new GitHub Release
   is published and verified. The cleanup removes old releases/tags and old
   completed GitHub Actions workflow runs by default.
+
+
+### Browser runner APT profiles
+
+Browser dependency preparation accepts either exact official GitHub runner
+profile: Azure + archive + security, or AWS us-east-2 + archive + security.
+It preserves the actual three identities on that runner, rejects mixed clouds,
+unknown mirrors and invalid/duplicate priorities before network access or writes,
+and keeps signed APT verification and bounded probes/retries unchanged. The
+upstream [configure-apt-sources.sh](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/configure-apt-sources.sh)
+was read as Git blob `7821a5f5091fc9680d58016664c66f12b1d84041`
+(SHA-256 `7aa4704d133e7665adcf793c8feaaadb01951bc2466a081d35ce6e8130adc3c7`).
+The selected exact cloud profile is logged; accepting a legitimate profile does
+not skip browser qualification or grant any API/native authority.

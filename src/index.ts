@@ -8,6 +8,8 @@ import { RELEASE_SOURCE_SHA, RELEASE_VERSION } from "./releaseMetadata";
 import type { AppEnv } from "./types";
 import { dispatchRendezvousRequest } from "./rendezvous/dispatch";
 import { dispatchSurfaceRequest } from "./surface-push/dispatch";
+import { dispatchInstallationSurfaceRequest } from "./native-push/installation-surface-dispatch";
+import { dispatchNativeInstallationRequest } from "./native-push/installation-dispatch";
 import { dispatchPrivateReceivingRequest } from "./host-wake-receiving/dispatch";
 
 type RouteHandler = (request: Request, env: AppEnv, ctx: ExecutionContext, url: URL) => Promise<Response>;
@@ -70,6 +72,10 @@ export default {
 		await purgePushDeliveryDiagnostics(env.DB);
 	},
 	async fetch(request, env, ctx): Promise<Response> {
+		const nativeSurface = dispatchInstallationSurfaceRequest(request, env);
+		if (nativeSurface) return await nativeSurface;
+		const nativeInstallation = dispatchNativeInstallationRequest(request, env);
+		if (nativeInstallation) return await nativeInstallation;
 		const privateReceiving = dispatchPrivateReceivingRequest(request, env, Date.now, fetch);
 		if (privateReceiving) return await privateReceiving;
 		const issuerUnavailable = await dispatchSurfaceRequest(request, env);

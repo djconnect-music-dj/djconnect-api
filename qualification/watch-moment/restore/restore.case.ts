@@ -147,5 +147,6 @@ it("blocks a normal relay after revoke wins over a paused D1 observation", async
     }
     expect(await send).toBe(pause ? "unknown" : "provider_accepted");
     expect(await rpc("count")).toBe(pause ? 0 : 1);
+    expect(await rpc("receipt")).toEqual(pause ? null : {event_id:event.event_id,session_id:event.session_id,moment_id:event.moment_id});
   }
 });

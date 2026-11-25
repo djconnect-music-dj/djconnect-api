@@ -9,6 +9,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+# Reuse the existing mandatory Python qualification entrypoint.
+from scripts.test_canonical_workflow_pin_reset import CanonicalPinResetTests
+from scripts.test_native_widget_source_delta import NativeWidgetSourceDeltaTests
+
 spec = importlib.util.spec_from_file_location('plan_validator', Path(__file__).with_name('validate_rendezvous_deployment_plan.py'))
 v = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(v)
@@ -67,11 +71,14 @@ class PreparationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             candidate = Path(directory) / 'manifest.json'
             for name, change in delta['manifest_changes'].items():
-                raw = (v.ROOT / name).read_bytes()
+                raw = v.native_before_bytes(name)
                 previous = v.api_41_previous_manifest(name, raw)
                 self.assertEqual(v.digest(previous), change['before'])
                 for item in change['replacements']:
-                    candidate.write_bytes(raw.replace(item['after'].encode(), b'"tampered": "invalid"', 1))
+                    active = next((entry['after'] for entry in v.canonical_pin_delta()['manifest_changes'][name]['replacements'] if entry['input'] == item['input']), item['after'])
+                    modified = raw.replace(active.encode(), b'"tampered": "invalid"', 1)
+                    self.assertNotEqual(modified, raw)
+                    candidate.write_bytes(modified)
                     with self.subTest(manifest=name, source=item['input']), patch.object(v, 'safe_path', side_effect=lambda path: candidate if path == name else original_safe_path(path)):
                         with self.assertRaises(ValueError):
                             v.api_41_previous_manifest(name, candidate.read_bytes())
@@ -135,7 +142,7 @@ class PreparationTests(unittest.TestCase):
                          v.WRANGLER_4160_PROVENANCE, v.WRANGLER_4160_DELTA_PATH,
                          *v.ORG_GOVERNANCE_SOURCES, *v.ORG_GOVERNANCE_REFERENCES,
                          v.ORG_GOVERNANCE_DELTA_PATH,
-                         v.API_CORE_IDENTITY_DELTA_PATH, v.API_ORG_RELEASE_DELTA_PATH, v.API_ORG_CORE_AUTHORITY_DELTA_PATH,
+                         v.POLICY40533_DELTA_PATH, *v.POLICY40533_REFERENCE_ADDITIONS, v.CANONICAL_PIN_DELTA_PATH, v.NATIVE_WIDGET_DELTA_PATH, v.COUNTER_WIDGET_DELTA_PATH, v.ACK_BOUNDS_DELTA_PATH, v.UNIQUE_APPLE_DELTA_PATH, *v.UNIQUE_APPLE_ADDITIONS, *v.NATIVE_WIDGET_CHANGES, *v.NATIVE_WIDGET_ADDITIONS, *v.NATIVE_WIDGET_REFERENCE_CHANGES, *v.NATIVE_WIDGET_REFERENCE_ADDITIONS, v.API_CORE_IDENTITY_DELTA_PATH, v.API_ORG_RELEASE_DELTA_PATH, v.API_ORG_CORE_AUTHORITY_DELTA_PATH,
                          v.API_SHARED_GOVERNANCE_DELTA_PATH, *v.API_SHARED_GOVERNANCE_WORKFLOWS, *v.API_SHARED_GOVERNANCE_MANIFESTS,
                          v.API_GUARD_REFERENCE_DELTA_PATH, v.API_GOVERNANCE_SUMMARY_DELTA_PATH, 'scripts/check_reusable_workflow_refs.sh',
                          v.CORE_GOVERNANCE_TRANSITION_PATH, *v.CORE_GOVERNANCE_WORKFLOWS,
@@ -155,6 +162,18 @@ class PreparationTests(unittest.TestCase):
             pinned.update({name: change['after'] for name, change in {**delta41['workflow_changes'], **delta41['version_source_changes']}.items()})
             manifest41 = json.loads((canonical / v.API_41_MANIFEST_DELTA_PATH).read_bytes())
             pinned.update({name: change['after'] for name, change in manifest41['manifest_changes'].items()})
+            canonical_delta = v.canonical_pin_delta()
+            pinned.update({name: change['after'] for name, change in {**canonical_delta['workflow_changes'], **canonical_delta['manifest_changes']}.items()})
+            native_delta = v.native_widget_delta()
+            pinned.update({name: change['after'] for name, change in {**native_delta['changes'], **native_delta['reference_changes']}.items()})
+            counter_delta = v.counter_widget_delta()
+            pinned.update({name: change['after'] for name, change in {**counter_delta['changes'], **counter_delta['reference_changes']}.items()})
+            ack_delta = v.ack_bounds_delta()
+            pinned.update({name: change['after'] for name, change in {**ack_delta['changes'], **ack_delta['reference_changes']}.items()})
+            unique_delta = v.unique_apple_delta()
+            pinned.update({name: change['after'] for name, change in {**unique_delta['changes'], **unique_delta['reference_changes']}.items()})
+            policy_delta = v.policy40533_delta()
+            pinned.update({name: change['after'] for name, change in {**policy_delta['changes'], **policy_delta['reference_changes']}.items()})
             for path in additions:
                 raw = (canonical / path).read_bytes()
                 expected = pinned[path]
@@ -246,7 +265,7 @@ class PreparationTests(unittest.TestCase):
         self.assertFalse(proof['public_activation_allowed'])
         self.assertFalse(proof['production_effect_authorized'])
         self.assertEqual(len(v.baseline_before_dependency_refresh()[0]), 144)
-        self.assertEqual(len(v.baseline()[0]), 148)
+        self.assertEqual(len(v.baseline()[0]) - len(v.NATIVE_WIDGET_ADDITIONS) - len(v.UNIQUE_APPLE_ADDITIONS), 148)
 
     def test_dependency_refresh_rejects_scope_history_and_source_forgery(self):
         original = v.pinned_working_proof(v.DEPENDENCY_DELTA_PATH, v.DEPENDENCY_DELTA_SHA256)
@@ -512,7 +531,7 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(len(v.baseline_before_receiving_root()[0]), 119)
         self.assertEqual(len(v.baseline_before_ci_retention()[0]), 142)
         self.assertEqual(len(v.baseline_before_dependency_refresh()[0]), 144)
-        self.assertEqual(len(self.plan['source_hashes']), 148)
+        self.assertEqual(len(self.plan['source_hashes']) - len(v.NATIVE_WIDGET_ADDITIONS) - len(v.UNIQUE_APPLE_ADDITIONS), 148)
         for name in v.DELTA_SOURCES:
             changed = copy.deepcopy(delta)
             changed['changes'][name]['before'] = None

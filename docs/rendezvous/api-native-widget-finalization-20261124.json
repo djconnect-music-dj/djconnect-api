@@ -1,0 +1,481 @@
+{
+  "candidate_checks": {
+    "skipped": 1,
+    "success": 61
+  },
+  "durable_record": {
+    "commit_sha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+    "integrity": {
+      "algorithm": "sha256-canonical-json",
+      "digest": "933489876845e80a67187d388de2d2d6f51878ec52abfd9129f3fb452bb5a762"
+    },
+    "kind": "durable_qualification_evidence",
+    "policy_source_identity": {
+      "original_repository_id": 1258575431,
+      "original_revision": "4877403ba6fc69881439e70d3048da13ecb5576b",
+      "repository": "djconnect-music-dj/.github",
+      "repository_id": 1461539726,
+      "revision": "89a2a8b4c7571965249bed745bf7c5c37a1221f1",
+      "snapshot": "evidence-4877"
+    },
+    "published_at": "2026-11-24T10:26:22Z",
+    "qualification": {
+      "outcome": "POST_MERGE_RELEASE_EVIDENCE_QUALIFIED",
+      "profile": "post_merge_release_evidence",
+      "required_checks": {
+        "post_merge_build_validation": "PASS",
+        "post_merge_ci": "PASS",
+        "post_merge_coverage": "PASS",
+        "post_merge_governance": "PASS",
+        "post_merge_lint": "PASS",
+        "post_merge_static_analysis": "PASS",
+        "post_merge_tests": "PASS",
+        "required_checks": "PASS",
+        "software_assurance": "PASS",
+        "trusted_delivery": "PASS",
+        "verification": "PASS",
+        "workflow_integrity": "PASS"
+      }
+    },
+    "record_id": "djconnect-music-dj/djconnect-api@4838160f5cf714b12530e727436b9b4dc36b391c:post-merge-release-evidence",
+    "redaction": {
+      "included_data": "formal allowlisted decision fields only",
+      "policy_version": 1,
+      "status": "REDACTED"
+    },
+    "release_identifier": "internal-api-4838160f5cf714b12530e727436b9b4dc36b391c",
+    "repository": "djconnect-music-dj/djconnect-api",
+    "repository_role": "active_source",
+    "retention_class": "LONG_TERM",
+    "revision": 1,
+    "schema_version": 1,
+    "source_evidence_digest": "0e2e9753d5a63b74894df2db6088f79dc5d0a8336ef8bf682b9128fb84bf62d6",
+    "source_revision": "89a2a8b4c7571965249bed745bf7c5c37a1221f1",
+    "supplemental_evidence": [
+      {
+        "kind": "coverage_artifact_digest",
+        "sha256": "2f2491cf3e1606fb02c628810b281b70258609d89e188feec87a10d26445aeb1"
+      }
+    ],
+    "workflow_references": {
+      "post_merge_run_ids": [
+        "45374460375"
+      ],
+      "producer_run_id": "45374771137"
+    }
+  },
+  "effects": {
+    "deployment": false,
+    "native_activation": false,
+    "provider_or_device_acceptance": false
+  },
+  "historical_operational_gates_open": 22,
+  "independent_review": "Root component/policy/source-history and exact normal-main-merge reviews GO; receiver historical bounded reviews retained",
+  "kind": "api_installation_native_widget_finalization",
+  "local_qualification": {
+    "category_is_only_server_expectation": true,
+    "checks": {
+      "actual_source_snapshot_pins": 303,
+      "assertion_crypto": 60,
+      "diff_check": "PASS",
+      "forbidden_rpc_denials": 100,
+      "independent_js_source": 6,
+      "legacy_ha_dev": 24,
+      "product_export_private_rpc": 128,
+      "projection": "PASS",
+      "python_source_history": 93,
+      "receiving_unchanged_input_pins": 141,
+      "typescript": "PASS",
+      "worker_d1": 642
+    },
+    "claim": "LOCAL_QUALIFICATION_NOT_MERGE_DEPLOYMENT_OR_NATIVE_ACCEPTANCE",
+    "genuine_apple_api_device_acceptance": false,
+    "historical_operational_gates_open": 22,
+    "logs_sha256": {
+      "api279-a1ba-assertion-crypto.log": "937f422f9d9efe54c9c5bcfe0b9b6908a48afd9d6161c912bbc8fe35fbf94938",
+      "api279-a1ba-js.log": "abcfc9a45f2f091dc3de7d30719a2dbf2d96dde80f95372ce858b594fb773087",
+      "api279-a1ba-legacy-firstkey.log": "521fb9d2aebcf0c04c677e9b16f29e5613f36f526b5f943d04cd783045c7a1e6",
+      "api279-a1ba-main-merge-proof.json": "f67d1adc2caa4450d10f2b6c996b1170c35094edbf04f99951c65ffee33ebca8",
+      "api279-a1ba-product-build.log": "d4e1a16e51cd7bdd6e6df312f9848ce4cc4932ccb1fab02a31ea87192068d20d",
+      "api279-a1ba-projection.log": "716ff5e4fe8c64bf818faf8722a1441c948ec62c289a25981bb66fcc4c9b2055",
+      "api279-a1ba-python.log": "eb1128e8b5f9927f914b7e059f38bed62fcd04f169a5ea1940d49b3a26c6075a",
+      "api279-a1ba-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "api279-a1ba-worker.log": "014d741e7d17b5bf05235da50b8cacd149129d384e6f36b9ab68de6aff4d7758"
+    },
+    "previous_qualified": "834ec55c6cc61175bd9005e68985286b751b6802",
+    "reconciled_main": "ba84d6766ddca3fe389f2282e581f87a7e431168",
+    "root_independent_normal_merge_review": "GO:two parents834/ba84;16 changed main paths byte-equal ba84;all other834 bytes unchanged",
+    "signed_policy": "ios-native-push-development-40533/1",
+    "source": "a1ba44ec2b8ca4e4ff7af59632d014f984a80d81"
+  },
+  "own_main_runs": [
+    {
+      "conclusion": "success",
+      "databaseId": 45374771137,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374771137",
+      "workflowName": "Post-Merge Release Evidence"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374770205,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374770205",
+      "workflowName": "API release artifact"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374459582,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374459582",
+      "workflowName": "AI-development projection"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374459800,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374459800",
+      "workflowName": "Push coordinator source qualification"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374459846,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374459846",
+      "workflowName": "Worker DO registry source conformance"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374459945,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374459945",
+      "workflowName": "Rich Session raw DATA profile"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460134,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460134",
+      "workflowName": "Surface enrollment source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374459684,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374459684",
+      "workflowName": "Fixed rendezvous QA build"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460564,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460564",
+      "workflowName": "Principal possession crypto DATA"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374459459,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374459459",
+      "workflowName": "TDE observe"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460200,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460200",
+      "workflowName": "WidgetKit first-key source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460475,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460475",
+      "workflowName": "Reusable workflow guard regression"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460198,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460198",
+      "workflowName": "Native proof DATA journal source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374459962,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374459962",
+      "workflowName": "Rich delivery adapter"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460154,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460154",
+      "workflowName": "Installation registry transactions"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374459762,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374459762",
+      "workflowName": "Watch Moment alert source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460201,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460201",
+      "workflowName": "Native proof transcript source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460000,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460000",
+      "workflowName": "Host app wake source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460405,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460405",
+      "workflowName": "Installation principal closed DATA"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460449,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460449",
+      "workflowName": "Host app wake private receiving source"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460375,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460375",
+      "workflowName": "Validate"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374460326,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374460326",
+      "workflowName": "CodeQL"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 45374459479,
+      "headSha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "status": "completed",
+      "url": "https://github.com/djconnect-music-dj/djconnect-api/actions/runs/45374459479",
+      "workflowName": "Local native experiment qualification"
+    }
+  ],
+  "owner_authorization_run": "https://github.com/djconnect-music-dj/djconnect/actions/runs/45374344785",
+  "reconciliation": {
+    "decision": "POST_MERGE_RELEASE_EVIDENCE_QUALIFIED",
+    "evidence_digest": "0e2e9753d5a63b74894df2db6088f79dc5d0a8336ef8bf682b9128fb84bf62d6",
+    "findings": [],
+    "kind": "post_merge_release_evidence",
+    "main_parents": [
+      "ba84d6766ddca3fe389f2282e581f87a7e431168"
+    ],
+    "main_sha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+    "merge_actor": "pcvantol",
+    "merge_strategy": "SQUASH",
+    "originating_pr": {
+      "base_ref": "main",
+      "changed_files": [
+        "coordinator/host-app-wake-receiving/native-assertion-crypto.ts",
+        "coordinator/host-app-wake-receiving/native-assertion.ts",
+        "coordinator/host-app-wake-receiving/runtime/source-inputs.json",
+        "docs/native-push/NATIVE_INSTALLATION_PUBLISHER_V1.md",
+        "docs/native-push/signed-ios-40533-policy-evidence.json",
+        "docs/rendezvous/deployment-preparation-v1.json",
+        "docs/rendezvous/installation-native-widget-source-delta-v1.json",
+        "docs/rendezvous/native-ack-key-bounds-source-delta-v1.json",
+        "docs/rendezvous/native-apple-identity-uniqueness-source-delta-v1.json",
+        "docs/rendezvous/native-ios40533-policy-source-delta-v1.json",
+        "docs/rendezvous/native-widget-counter-integrity-source-delta-v1.json",
+        "migrations/0014_native_installation_publisher.sql",
+        "migrations/0015_native_installation_surface_roles.sql",
+        "migrations/0016_native_installation_apple_key.sql",
+        "migrations/0017_native_installation_role_challenges.sql",
+        "migrations/0018_native_installation_unique_apple_identity.sql",
+        "qualification/rendezvous/api-41-source-delta.check.mjs",
+        "qualification/rendezvous/local-native-runtime.mjs",
+        "qualification/rendezvous/native-widget-source-delta.check.mjs",
+        "scripts/test_canonical_workflow_pin_reset.py",
+        "scripts/test_native_widget_source_delta.py",
+        "scripts/test_rendezvous_deployment_plan.py",
+        "scripts/validate_rendezvous_deployment_plan.py",
+        "src/index.ts",
+        "src/native-push/first-key-apple.ts",
+        "src/native-push/first-key-service.ts",
+        "src/native-push/first-key-wire.ts",
+        "src/native-push/installation-dispatch.ts",
+        "src/native-push/installation-first-key.ts",
+        "src/native-push/installation-policy.ts",
+        "src/native-push/installation-publisher.ts",
+        "src/native-push/installation-reauthorization.ts",
+        "src/native-push/installation-surface-dispatch.ts",
+        "src/native-push/installation-surface-enrol.ts",
+        "src/surface-push/composition.ts",
+        "src/surface-push/handler.ts",
+        "src/surface-push/store.ts",
+        "test/native-installation-ack-bounds.spec.ts",
+        "test/native-installation-apple-key.spec.ts",
+        "test/native-installation-policy.spec.ts",
+        "test/native-installation-publisher.spec.ts",
+        "test/native-installation-surface.spec.ts"
+      ],
+      "head_sha": "a1ba44ec2b8ca4e4ff7af59632d014f984a80d81",
+      "main_changed_files": [
+        "coordinator/host-app-wake-receiving/native-assertion-crypto.ts",
+        "coordinator/host-app-wake-receiving/native-assertion.ts",
+        "coordinator/host-app-wake-receiving/runtime/source-inputs.json",
+        "docs/native-push/NATIVE_INSTALLATION_PUBLISHER_V1.md",
+        "docs/native-push/signed-ios-40533-policy-evidence.json",
+        "docs/rendezvous/deployment-preparation-v1.json",
+        "docs/rendezvous/installation-native-widget-source-delta-v1.json",
+        "docs/rendezvous/native-ack-key-bounds-source-delta-v1.json",
+        "docs/rendezvous/native-apple-identity-uniqueness-source-delta-v1.json",
+        "docs/rendezvous/native-ios40533-policy-source-delta-v1.json",
+        "docs/rendezvous/native-widget-counter-integrity-source-delta-v1.json",
+        "migrations/0014_native_installation_publisher.sql",
+        "migrations/0015_native_installation_surface_roles.sql",
+        "migrations/0016_native_installation_apple_key.sql",
+        "migrations/0017_native_installation_role_challenges.sql",
+        "migrations/0018_native_installation_unique_apple_identity.sql",
+        "qualification/rendezvous/api-41-source-delta.check.mjs",
+        "qualification/rendezvous/local-native-runtime.mjs",
+        "qualification/rendezvous/native-widget-source-delta.check.mjs",
+        "scripts/test_canonical_workflow_pin_reset.py",
+        "scripts/test_native_widget_source_delta.py",
+        "scripts/test_rendezvous_deployment_plan.py",
+        "scripts/validate_rendezvous_deployment_plan.py",
+        "src/index.ts",
+        "src/native-push/first-key-apple.ts",
+        "src/native-push/first-key-service.ts",
+        "src/native-push/first-key-wire.ts",
+        "src/native-push/installation-dispatch.ts",
+        "src/native-push/installation-first-key.ts",
+        "src/native-push/installation-policy.ts",
+        "src/native-push/installation-publisher.ts",
+        "src/native-push/installation-reauthorization.ts",
+        "src/native-push/installation-surface-dispatch.ts",
+        "src/native-push/installation-surface-enrol.ts",
+        "src/surface-push/composition.ts",
+        "src/surface-push/handler.ts",
+        "src/surface-push/store.ts",
+        "test/native-installation-ack-bounds.spec.ts",
+        "test/native-installation-apple-key.spec.ts",
+        "test/native-installation-policy.spec.ts",
+        "test/native-installation-publisher.spec.ts",
+        "test/native-installation-surface.spec.ts"
+      ],
+      "merge_actor": "pcvantol",
+      "merge_commit_sha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "merge_strategy": "SQUASH",
+      "merged_at": "2026-11-24T10:24:11Z",
+      "number": 279,
+      "state": "MERGED"
+    },
+    "post_merge": {
+      "build_validation": "PASS",
+      "ci": "PASS",
+      "coverage": "PASS",
+      "coverage_artifact_sha": "sha256:2f2491cf3e1606fb02c628810b281b70258609d89e188feec87a10d26445aeb1",
+      "coverage_report_sha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "governance": "PASS",
+      "lint": "PASS",
+      "sha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "static_analysis": "PASS",
+      "tests": "PASS",
+      "workflow_run_ids": [
+        "45374460375"
+      ]
+    },
+    "pre_merge": {
+      "candidate_sha": "a1ba44ec2b8ca4e4ff7af59632d014f984a80d81",
+      "owner_authorization": "PASS",
+      "required_checks": "PASS",
+      "risk_classification": "NORMAL_RISK",
+      "software_assurance": "PASS",
+      "trusted_delivery": "PASS",
+      "verification": "PASS",
+      "workflow_integrity": "PASS"
+    },
+    "provenance_result": "PASS",
+    "repository": "djconnect-music-dj/djconnect-api",
+    "repository_role": "active_source",
+    "schema_version": 1,
+    "source_qualified_pr_sha": "a1ba44ec2b8ca4e4ff7af59632d014f984a80d81",
+    "timestamp": "2026-11-24T10:26:22.207Z"
+  },
+  "release_artifact": {
+    "artifact": {
+      "artifact_id": "14910088793",
+      "artifact_sha256": "9ecc200b411ecec912d7353c646f6ee253c45d715e78891be3866d8b04060f91",
+      "candidate_sha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+      "kind": "api_worker_release_artifact",
+      "repository": "djconnect-music-dj/djconnect-api",
+      "schema_version": 1,
+      "timestamp": "2026-11-24T10:26:41Z"
+    },
+    "durableChecks": "ALL_PASS",
+    "durableIntegrity": "933489876845e80a67187d388de2d2d6f51878ec52abfd9129f3fb452bb5a762",
+    "effects": "NO_DEPLOYMENT_OR_NATIVE_ACCEPTANCE_CLAIM",
+    "formalDigest": "0e2e9753d5a63b74894df2db6088f79dc5d0a8336ef8bf682b9128fb84bf62d6",
+    "licenseManifest": "PASS",
+    "normalization": "one RELEASE_SOURCE_SHA assignment; remove sourceMappingURL directive; otherwise exact bytes",
+    "packagedSidecars": "MATCH exact source",
+    "regularFiles": 26,
+    "sha": "4838160f5cf714b12530e727436b9b4dc36b391c",
+    "tarSHA256": "9ecc200b411ecec912d7353c646f6ee253c45d715e78891be3866d8b04060f91",
+    "workerSHA256": "7ba02c7bfc32b02329dadfbce30248456c2bae7894b94983e17243600a2f63f7"
+  },
+  "repository": "djconnect-music-dj/djconnect-api",
+  "repository_id": 1275206655,
+  "retained_original_sha256": {
+    "artifact-check.json": "d45e9ff05ff155b2f1b2ee2ac68b38b29489e3a5110bdbee24c3d5597383d5cd",
+    "durable/qualification-evidence-4838160f5cf714b12530e727436b9b4dc36b391c.json": "5101736f061c6482df4377e23d9615c814fe4f63f391ab49bb3810697f92b199",
+    "reconciliation/post-merge-release-evidence.json": "a151b89dd25d3e259178e830cf675fb33a55ff0312dfe2ef679163c666ce511e",
+    "release-metadata.json": "886230df2e855bf3f7f374941e902ea4d4bd6582e4adad763770085770a508be",
+    "runs.json": "6c3ce830d42b88bfbd61a880f9a0f4ae38c88782050c188dd8fef1827b76f027"
+  },
+  "schema_version": 1,
+  "scope": "installation-principal paired publication, genuine native first-key verification, Widget issuer enrollment/reauthorization and negative provenance; separate from actual deployment or native/provider acceptance",
+  "signed_policy": {
+    "actual_apple_proof_required": true,
+    "category3_is_only_server_expectation": true,
+    "id": "ios-native-push-development-40533/1"
+  },
+  "source_head": "a1ba44ec2b8ca4e4ff7af59632d014f984a80d81",
+  "source_merge": "4838160f5cf714b12530e727436b9b4dc36b391c",
+  "source_pr": "https://github.com/djconnect-music-dj/djconnect-api/pull/279",
+  "source_tree": "87f48ffca5ab7198699a13b10f6251e1f13e4ace"
+}

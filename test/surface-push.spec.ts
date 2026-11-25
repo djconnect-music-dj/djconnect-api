@@ -24,14 +24,14 @@ function client(overrides: Partial<SurfaceOptions> = {}) {
 function terminal(body: Pick<ReturnType<typeof registration>, "contract_version" | "registration_id" | "generation" | "revision" | "binding_id" | "device_binding" | "owner_binding">) { const { contract_version, registration_id, generation, revision, binding_id, device_binding, owner_binding } = body; return { contract_version, registration_id, generation, revision, binding_id, device_binding, owner_binding, operation_id: operation() }; }
 async function capability(role = "widget", platform = "macos", external = 0) {
  await env.DB.prepare("DELETE FROM surface_push_delegations WHERE id='example-delegation'").run();
- const parent = platform === "ios" ? "dev.djconnect.ios" : "dev.djconnect.mac";
- const policy = { token_role: role, platform, apns_environment: "sandbox", target: role === "widget" ? { app_bundle_id: parent, extension_bundle_id: parent + ".track-insight-widget", widget_kind: "DJConnectSessionWidget" } : { app_bundle_id: parent, attributes_type: "ExampleAttributes" }, activity_profile: "example-closed/1", external_content_allowed: !!external, original_grant_expires_at_ms: NOW + 8 * 3600000, max_operations: 100, max_events: 10, max_challenges: 10 };
+ const parent = platform === "ios" ? "dev.djconnect.ios" : platform === "watchos" ? "dev.djconnect.ios.watch" : "dev.djconnect.mac";
+ const policy = { token_role: role, platform, apns_environment: "sandbox", target: role === "widget" ? { app_bundle_id: parent, extension_bundle_id: parent + (platform === "watchos" ? ".complications" : ".track-insight-widget"), widget_kind: platform === "watchos" ? "DJConnectComplication" : "DJConnectSessionWidget" } : { app_bundle_id: parent, attributes_type: "ExampleAttributes" }, activity_profile: "example-closed/1", external_content_allowed: !!external, original_grant_expires_at_ms: NOW + 8 * 3600000, max_operations: 100, max_events: 10, max_challenges: 10 };
  // Trusted synthetic operator-row seed for pre-existing handler tests, not issuer evidence.
  await env.DB.prepare(`INSERT INTO surface_push_delegations(id,revision,enrol_operation_id,approval_reference,install_id,device_binding,owner_binding,grant_binding,source_binding,binding_id,public_key_json,key_thumbprint,policy_json,scope_digest,expires_at,created_at,revoked_at) VALUES('example-delegation',1,'example-enrol-op','fixture','example-install',?,?,?,?,?,'{}','fixture',?,?,?, ?,NULL)`)
   .bind("d".repeat(64),"e".repeat(64),"1".repeat(64),"2".repeat(64),"b".repeat(64),JSON.stringify(policy),"f".repeat(64),NOW+8*3600000,NOW).run();
  await env.DB.prepare(`INSERT INTO surface_push_capabilities
  (id,token_hash,install_id,device_binding,owner_binding,parent_bundle,extension_bundle,widget_kind,attributes_type,activity_profile,external_content_allowed,platform,environment,role,expires_at,revoked_at,max_operations,max_events,delegation_id,delegation_revision,binding_id,grant_binding,source_binding,scope_digest)
- VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL,?,?,'example-delegation',1,?,?,?,?)`).bind("example-cap", await sha256Hex(CAP), "example-install", "d".repeat(64), "e".repeat(64), parent, role === "widget" ? parent + ".track-insight-widget" : "", role === "widget" ? "DJConnectSessionWidget" : "", role === "widget" ? "" : "ExampleAttributes", "example-closed/1", external, platform, "sandbox", role, NOW + 8 * 3600000, 100, 10, "b".repeat(64), "1".repeat(64), "2".repeat(64), "f".repeat(64)).run();
+ VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL,?,?,'example-delegation',1,?,?,?,?)`).bind("example-cap", await sha256Hex(CAP), "example-install", "d".repeat(64), "e".repeat(64), parent, role === "widget" ? parent + (platform === "watchos" ? ".complications" : ".track-insight-widget") : "", role === "widget" ? (platform === "watchos" ? "DJConnectComplication" : "DJConnectSessionWidget") : "", role === "widget" ? "" : "ExampleAttributes", "example-closed/1", external, platform, "sandbox", role, NOW + 8 * 3600000, 100, 10, "b".repeat(64), "1".repeat(64), "2".repeat(64), "f".repeat(64)).run();
 }
 async function row() { return env.DB.prepare("SELECT * FROM surface_push_targets").first<Record<string, unknown>>(); }
 const profile: ActivityProfile = { id: "example-closed/1", parseContent(payload) {
@@ -42,6 +42,31 @@ const profile: ActivityProfile = { id: "example-closed/1", parseContent(payload)
 describe("source-only typed surface relay with actual D1", () => {
  beforeAll(async () => { for (const sql of (ordinarySchema + "\n" + migration + "\n" + purposeMigration).split(";").filter(s => s.replace(/--[^\n]*/g, "").trim())) await env.DB.prepare(sql).run(); });
  beforeEach(async () => { sequence = 0; await env.DB.batch([env.DB.prepare("DELETE FROM surface_push_operations"), env.DB.prepare("DELETE FROM surface_push_targets"), env.DB.prepare("DELETE FROM surface_push_capabilities"), env.DB.prepare("DELETE FROM surface_push_issuer_operations"), env.DB.prepare("DELETE FROM surface_push_operator_operations"), env.DB.prepare("DELETE FROM surface_push_delegations")]); await capability(); });
+ it.each([false, true])("qualifies the distinct Watch Smart Stack widget target; withdraw during provider auth=%s", async withdraw => {
+  // Synthetic operator authority; actual shipping target metadata, not native admission proof.
+  await env.DB.prepare("DELETE FROM surface_push_capabilities").run();
+  await capability("widget", "watchos");
+  const input = {...registration(), platform:"watchos", target:{instance_id:"watch-stack-fixture",
+   app_bundle_id:"dev.djconnect.ios.watch", extension_bundle_id:"dev.djconnect.ios.watch.complications",
+   widget_kind:"DJConnectComplication"}};
+  const fetcher = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+   expect(new Headers(init?.headers).get("apns-topic")).toBe("dev.djconnect.ios.watch.push-type.widgets");
+   expect(new Headers(init?.headers).get("apns-push-type")).toBe("widgets");
+   expect(JSON.parse(String(init?.body))).toEqual({aps:{"content-changed":true}});
+   return new Response("{}",{status:200});
+  });
+  const call = client({fetcher, authorizeProvider:async()=>{
+   if(withdraw) expect((await call("revoke",terminal(input))).status).toBe(200);
+   return "example.provider.jwt";
+  }});
+  expect((await call("register",input)).status).toBe(200);
+  const wrongKind={...input,registration_id:"wrong-iphone-kind",operation_id:operation(),target:{...input.target,widget_kind:"DJConnectSessionWidget"}};
+  expect((await call("register",wrongKind)).status).toBe(403);
+  const response=await call("event",{...terminal(input),event:"widget_reload"});
+  expect((await response.json()).operation_state).toBe(withdraw ? "not_sent" : "provider_accepted");
+  expect(fetcher).toHaveBeenCalledTimes(withdraw ? 0 : 1);
+ });
+
  it("registers exactly Core's opaque generation/revision/expiry and stores only authenticated ciphertext", async () => {
   const input = registration(), response = await client()("register", input); expect(response.status).toBe(200);
   expect(await response.json()).toMatchObject({ contract_version: 1, success: true, registration_id: input.registration_id, generation: input.generation, revision: 1, expires_at_ms: EXPIRES });
