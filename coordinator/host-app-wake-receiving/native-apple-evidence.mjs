@@ -277,13 +277,21 @@ async function receiptEvidence(encoded,attestedCert,clientData,policy,window,fet
   return {created,expires,receipt:encoded.slice(),certificateExpiresAt,statusCheckedAt:Math.max(issuerStatus.status.checkedAt,signerStatus.status.checkedAt),statusExpiresAt:Math.min(issuerStatus.status.cacheUntil,signerStatus.status.cacheUntil),scope:'APPLE_RECEIPT_SIGNATURE_PATH_FIELDS_AND_FRESH_SIGNED_COMMON_STATUS_ONLY_NO_ENROLLMENT'};
 }
 
+export function isAppleBuildAtLeast(observed, minimum) {
+ const decimal = /^[1-9][0-9]{0,19}$/;
+ return typeof observed === 'string' && decimal.test(observed)
+  && typeof minimum === 'string' && decimal.test(minimum)
+  && BigInt(observed) >= BigInt(minimum);
+}
 function decodeCbor(encoded,extended=false){return parseCall(()=>cbor.decodeFirstSync(Buffer.from(encoded),{preventDuplicateKeys:true,preferMap:true,max_depth:8,extendedResults:extended}));}
 function closedMap(value,keys){need(value instanceof Map&&value.size===keys.length&&keys.every(k=>value.has(k)));return value;}
 /** Raw Apple evidence only. The trusted TS caller supplies its actual saved
  * policy/job; only its separate opaque receipt/atomic D1 writer may enroll. */
 export async function verifyAppleAttestationEvidence(encoded,clientData,keyId,policy,window,fetcher){
  try{
-  window.check();bounded(encoded,1,9216);bounded(clientData,1,8192);need((policy.profile==='host_wake_apple_properties_attestation_v2'||policy.profile==='host_wake_apple_properties_attestation_v3')&&(policy.app_attest_environment==='development'||policy.app_attest_environment==='production')&&typeof policy.app_identifier==='string'&&typeof policy.bundle_version==='string');
+  window.check();bounded(encoded,1,9216);bounded(clientData,1,8192);need((policy.profile==='host_wake_apple_properties_attestation_v2'||policy.profile==='host_wake_apple_properties_attestation_v3')&&(policy.app_attest_environment==='development'||policy.app_attest_environment==='production')&&typeof policy.app_identifier==='string'&&(policy.minimum_bundle_version === undefined
+    ? typeof policy.bundle_version === 'string'
+    : policy.bundle_version === undefined && isAppleBuildAtLeast(policy.minimum_bundle_version, policy.minimum_bundle_version)));
   const categorySelection=policy.profile==='host_wake_apple_properties_attestation_v2'?[policy.launch_validation_category_b64]:policy.allowed_launch_validation_categories_b64;
   need(Array.isArray(categorySelection)&&categorySelection.length>=1&&categorySelection.length<=4);const categoryValues=Object.freeze([...categorySelection]);let previous=0;
   for(const value of categoryValues){const bytes=fromB64(value);need(bytes.length===4&&toB64(bytes)===value);const n=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(0,true);need([2,3,4,5].includes(n)&&n>previous);previous=n;}
@@ -299,12 +307,17 @@ export async function verifyAppleAttestationEvidence(encoded,clientData,keyId,po
   const decoded=decodeCbor(auth.subarray(87),true),cose=closedMap(decoded.value,[1,3,-1,-2,-3]);need(cose.get(1)===2&&cose.get(3)===-7&&cose.get(-1)===1);
   const point=concat(new Uint8Array([4]),concat(bounded(cose.get(-2),32,32),bounded(cose.get(-3),32,32)));
   const props=closedMap(decodeCbor(bounded(decoded.unused,1,1024)),['apple_bundle_version_01','apple_validation_category_01']);
-  const observedCategory=toB64(bounded(props.get('apple_validation_category_01'),4,4));need(props.get('apple_bundle_version_01')===policy.bundle_version&&categoryValues.includes(observedCategory));
+  const observedBuild = props.get('apple_bundle_version_01');
+  const observedCategory=toB64(bounded(props.get('apple_validation_category_01'),4,4));
+  const buildMatches = policy.minimum_bundle_version === undefined
+   ? observedBuild === policy.bundle_version
+   : isAppleBuildAtLeast(observedBuild, policy.minimum_bundle_version);
+  need(typeof observedBuild === 'string' && buildMatches && categoryValues.includes(observedCategory));
   const leaf=path.leaf;need(same(point,leaf.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHexView)&&same(await hash(point),credential));
   const found=leaf.extensions.filter(e=>e.extnID===PATH_OID.nonce);need(found.length===1&&!found[0].critical);
   const expected=await hash(concat(auth,await hash(clientData))),nonce=new asn.Sequence({value:[new asn.Constructed({idBlock:{tagClass:3,tagNumber:1},value:[new asn.OctetString({valueHex:expected})]})]});
   need(same(new Uint8Array(nonce.toBER(false)),found[0].extnValue.valueBlock.valueHexView));
   const receipt=await receiptEvidence(receiptBytes,leafBytes,clientData,policy,window,fetcher);window.check();need(window.check()<path.expires);
-  return {scope:'APPLE_ATTESTATION_AND_RECEIPT_CRYPTO_STATUS_ONLY_NO_ENROLLMENT',launch_validation_category_b64:observedCategory,public_key_spki_b64:toB64(new Uint8Array(leaf.subjectPublicKeyInfo.toSchema().toBER(false))),receipt:receipt.receipt,receiptCreated:receipt.created,expires:Math.min(path.expires,receipt.certificateExpiresAt,receipt.expires),attestationPathScope:path.scope,receiptScope:receipt.scope,statusCheckedAt:receipt.statusCheckedAt,statusExpiresAt:receipt.statusExpiresAt};
+  return {scope:'APPLE_ATTESTATION_AND_RECEIPT_CRYPTO_STATUS_ONLY_NO_ENROLLMENT',launch_validation_category_b64:observedCategory,bundle_version:observedBuild,public_key_spki_b64:toB64(new Uint8Array(leaf.subjectPublicKeyInfo.toSchema().toBER(false))),receipt:receipt.receipt,receiptCreated:receipt.created,expires:Math.min(path.expires,receipt.certificateExpiresAt,receipt.expires),attestationPathScope:path.scope,receiptScope:receipt.scope,statusCheckedAt:receipt.statusCheckedAt,statusExpiresAt:receipt.statusExpiresAt};
  }catch(error){window.check();if(error instanceof NativeAppleProofRejected)return null;throw error;}
 }

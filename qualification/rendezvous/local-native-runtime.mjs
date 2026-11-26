@@ -178,9 +178,30 @@ export function wrangler4164Previous(name,raw,delta){
  return raw;
 }
 
+const supportedBuildsPath = 'docs/rendezvous/native-ios-supported-builds-source-delta-v1.json';
+const supportedBuildsPin = '30b851d0fd7ca922d2321cf27b892237ec2c7142d5e5c726a9b74218fef3644e';
+
+async function supportedBuildsLayer() {
+ const raw = await readFile(join(repo, supportedBuildsPath));
+ need(sha(raw) === supportedBuildsPin);
+ const delta = JSON.parse(raw);
+ need(delta.schema_version === 1 && delta.scope === 'IOS_SUPPORTED_BUILDS_SOURCE_ONLY' &&
+      delta.production_effect_authorized === false);
+ return delta;
+}
+
+async function supportedBuildsPrevious(name, raw) {
+ const delta = await supportedBuildsLayer();
+ const change = delta.changes[name];
+ if (!change) return raw;
+ const previous = Buffer.from(change.previous_bytes_b64, 'base64');
+ need(sha(raw) === change.after && sha(previous) === change.before);
+ return previous;
+}
+
 async function historicalRead(path,delta,encoding){
  const name=resolve(path).slice(repo.length+1);
- const raw=await nativeWidgetPrevious(name,wrangler4164Previous(name,await readFile(path),delta));
+ const raw=await nativeWidgetPrevious(name,wrangler4164Previous(name,await supportedBuildsPrevious(name,await readFile(path)),delta));
  return encoding?raw.toString(encoding):raw;
 }
 export async function sourceSnapshot(){
@@ -193,6 +214,19 @@ export async function sourceSnapshot(){
  need(publishedPlan.reference_hashes[wrangler4164Path]===wrangler4164Pin&&
   publishedPlan.reference_hashes[wrangler4164Provenance]===wrangler4164.reference_additions[wrangler4164Provenance]);
  const plan={...publishedPlan,source_hashes:{...publishedPlan.source_hashes},reference_hashes:{...publishedPlan.reference_hashes}};
+ const supported = await supportedBuildsLayer();
+ need(publishedPlan.reference_hashes[supportedBuildsPath] === supportedBuildsPin &&
+      publishedPlan.source_provenance.native_ios_supported_builds_delta_sha256 === supportedBuildsPin &&
+      publishedPlan.source_provenance.native_ios_supported_builds_source_map_sha256 === supported.effective_source_map_sha256 &&
+      supported.effective_source_map_sha256 === mapHash(publishedPlan.source_hashes));
+ for (const [name, change] of Object.entries(supported.changes)) {
+  need(plan.source_hashes[name] === change.after);
+  await supportedBuildsPrevious(name, await readFile(join(repo, name)));
+  plan.source_hashes[name] = change.before;
+ }
+ delete plan.reference_hashes[supportedBuildsPath];
+ const wrangler4164SourceMap = mapHash(plan.source_hashes);
+ need(wrangler4164SourceMap === supported.baseline_source_map_sha256);
  for(const [hashes,changes] of [[plan.source_hashes,wrangler4164.changes],[plan.reference_hashes,wrangler4164.reference_changes]]){
   for(const [name,change] of Object.entries(changes)){
    need(hashes[name]===change.after);
@@ -205,7 +239,7 @@ export async function sourceSnapshot(){
  delete plan.reference_hashes['qualification/rendezvous/compatible-runtime-dependency-provenance-v7.json'];
  const wrangler4164PreviousSources={...plan.source_hashes};
  need(mapHash(wrangler4164PreviousSources)===wrangler4164.baseline_source_map_sha256&&
-  mapHash(publishedPlan.source_hashes)===wrangler4164.effective_source_map_sha256&&
+  wrangler4164SourceMap===wrangler4164.effective_source_map_sha256&&
   publishedPlan.source_provenance.wrangler_4164_delta_sha256===wrangler4164Pin&&
   publishedPlan.source_provenance.wrangler_4164_source_map_sha256===wrangler4164.effective_source_map_sha256);
  for(const[name,c]of Object.entries(policy40533.changes)){need(plan.source_hashes[name]===c.after);plan.source_hashes[name]=c.before;}

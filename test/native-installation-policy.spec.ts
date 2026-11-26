@@ -4,14 +4,15 @@ import {expect,it} from "vitest";
 import evidence from "../docs/native-push/signed-ios-40533-policy-evidence.json";
 import {installationNativePolicy} from "../src/native-push/installation-policy";
 import {createInstallationFirstKey} from "../src/native-push/installation-first-key";
+import {isAppleBuildAtLeast} from "../coordinator/host-app-wake-receiving/native-apple-evidence.mjs";
 import {createWidgetFirstKeyHandler} from "../src/native-push/first-key-service";
 const origin="https://api.djconnect.dev";
 const request=()=>new Request(origin+"/v1/push/native/key/challenge",{method:"POST",
  headers:{"content-type":"application/json"},body:"{}"});
-it("pins the NEW selected40533 policy to actual signed artifact data without claiming Apple/category/clock acceptance",()=>{
+it("retains the qualified 40533 baseline while accepting newer Apple-signed builds",()=>{
  expect(installationNativePolicy).toEqual({id:"ios-native-push-development-40533/1",
   expiresAt:Date.parse("2026-12-23T10:00:00Z"),apple:{profile:"host_wake_apple_properties_attestation_v2",
-   app_identifier:"ZEML4LPXH4.dev.djconnect.ios",app_attest_environment:"development",bundle_version:"40533",
+   app_identifier:"ZEML4LPXH4.dev.djconnect.ios",app_attest_environment:"development",minimum_bundle_version:"40533",
    launch_validation_category_b64:"AwAAAA=="}});
  expect(evidence.application.build).toBe("40533");expect(evidence.apple_source).toBe("60fd1157207dfb0f8cc7fe5fbf3acfd26fd3ef58");
  expect(evidence.signed_manifest_sha256).toBe("1d83d30268176f56f4a6f398bee2e38f50df292f67f76b90d55b928cd4611741");
@@ -24,8 +25,8 @@ it("selected configuration still requires original installation authentication b
 });
 const variants=[
  {name:"old40532 policy ID",id:"ios-native-push-development-40532/1"},
- {name:"old40532 bundle",apple:{bundle_version:"40532"}},
- {name:"other unqualified bundle",apple:{bundle_version:"40534"}},
+ {name:"older build floor",apple:{minimum_bundle_version:"40532"}},
+ {name:"exact bundle override",apple:{bundle_version:"40534"}},
  {name:"other category",apple:{launch_validation_category_b64:"BAAAAA=="}},
  {name:"production environment",apple:{app_attest_environment:"production" as const}},
  {name:"other AppID",apple:{app_identifier:"ZEML4LPXH4.dev.other"}},
@@ -42,4 +43,12 @@ it("the low-level production guard refuses the OLD40532 slash policy rather than
   expiresAt:installationNativePolicy.expiresAt,isCurrent:()=>true,isPairCurrent:async()=>true,
   verifyApple:async()=>{verifierCalls++;return true;}},undefined,"installation");
  const response=await handler(request());expect(response.status).toBe(503);expect(verifierCalls).toBe(0);
+});
+
+it("accepts current and newer decimal builds, and rejects malformed values and downgrades", () => {
+ const floor = installationNativePolicy.apple.minimum_bundle_version;
+ for (const build of ["40533", "40547", "40600", "99999999999999999999"])
+  expect(isAppleBuildAtLeast(build, floor)).toBe(true);
+ for (const build of ["40532", "040547", "40547.1", "4e5", " 40547", 40547, "", "100000000000000000000"])
+  expect(isAppleBuildAtLeast(build, floor)).toBe(false);
 });

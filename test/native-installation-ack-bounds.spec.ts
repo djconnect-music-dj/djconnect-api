@@ -21,7 +21,7 @@ const kernel=vi.hoisted(()=>({expires:0,status:0,calls:0,spki:"",keyId:"",after:
 vi.mock("../coordinator/host-app-wake-receiving/native-apple-evidence.mjs",()=>({
  verifyAppleAttestationEvidence:async()=>{
   kernel.calls++;await kernel.after?.();
-  return {scope:"APPLE_ATTESTATION_AND_RECEIPT_CRYPTO_STATUS_ONLY_NO_ENROLLMENT",public_key_spki_b64:kernel.spki,
+  return {scope:"APPLE_ATTESTATION_AND_RECEIPT_CRYPTO_STATUS_ONLY_NO_ENROLLMENT",bundle_version:"40547",public_key_spki_b64:kernel.spki,
    launch_validation_category_b64:"AwAAAA==",expires:kernel.expires,statusExpiresAt:kernel.status};
  }
 }));

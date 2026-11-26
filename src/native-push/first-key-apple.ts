@@ -51,7 +51,7 @@ export function createWidgetFirstKeyAppleVerifier(
             originals.set(result, {transcript: Uint8Array.from(transcript), deadline: expiresAt,
                 key: Object.freeze({key_id_b64: keyId, public_key_spki_b64: evidence.public_key_spki_b64,
                     policy_json: canonical({profile: "host_wake_apple_assertion_properties_v2",
-                        app_identifier: selected.app_identifier, bundle_version: selected.bundle_version,
+                        app_identifier: selected.app_identifier, bundle_version: evidence.bundle_version,
                         launch_validation_category_b64: evidence.launch_validation_category_b64}),
                     evidence_expires_at_ms: evidence.expires, status_expires_at_ms: evidence.statusExpiresAt,
                     counter: 0 as const})});

@@ -7,6 +7,7 @@ import { readFirstKeyBody } from "./first-key-service";
 import { authenticateInstallation } from "./installation-publisher";
 import { installationNativePolicy } from "./installation-policy";
 import { verifyNativeAssertionCrypto } from "../../coordinator/host-app-wake-receiving/native-assertion-crypto";
+import { isAppleBuildAtLeast } from "../../coordinator/host-app-wake-receiving/native-apple-evidence.mjs";
 import { RequestWindow } from "../../coordinator/host-app-wake-receiving/request-window";
 export const reauthorizationPrefix = "/v1/push/native/installation/issuer/reauthorize/";
 export const reauthorizationVersion = "djc-installation-widget-reauthorization/1";
@@ -99,7 +100,9 @@ export function createInstallationReauthorization(env:AppEnv,current:()=>boolean
    const policy=JSON.parse(key.apple_assertion_policy_json) as Record<string,unknown>;
    closed(policy,["profile","app_identifier","bundle_version","launch_validation_category_b64"]);
    need(policy.profile==="host_wake_apple_assertion_properties_v2"&&policy.app_identifier===selected.apple.app_identifier&&
-    policy.bundle_version===selected.apple.bundle_version&&policy.launch_validation_category_b64===selected.apple.launch_validation_category_b64,
+    typeof policy.bundle_version === "string" &&
+    isAppleBuildAtLeast(policy.bundle_version, selected.apple.minimum_bundle_version) &&
+    policy.launch_validation_category_b64===selected.apple.launch_validation_category_b64,
     "native_role_saved_apple_policy_required",403);
    const publicKey=await signatureKey(key.key_spki);
    const exported=await crypto.subtle.exportKey("jwk",await crypto.subtle.importKey("spki",
@@ -145,7 +148,9 @@ export function createInstallationReauthorization(env:AppEnv,current:()=>boolean
    const counter=await verifyNativeAssertionCrypto(Uint8Array.from(atob(proof.proof_b64),c=>c.charCodeAt(0)),
     reauthorizationSigningBytes("register",native,challenge,delegation),
     {public_key_spki_b64:key.apple_public_key_spki_b64,native_key_id_b64:key.apple_key_id_b64,counter:key.apple_counter},
-    policy as {profile:string;app_identifier:string;bundle_version:string;launch_validation_category_b64:string},window);
+    {profile:"host_wake_apple_assertion_properties_v2",app_identifier:selected.apple.app_identifier,
+     minimum_bundle_version:policy.bundle_version,
+     launch_validation_category_b64:selected.apple.launch_validation_category_b64},window);
    need(counter!==null&&live(),"native_role_assertion_rejected",403);window.check();
    const keyHash=await thumbprint(delegation.public_key),requestHash=await sha256Hex(new TextDecoder().decode(
     reauthorizationSigningBytes("challenge",native,publication,delegation)));
