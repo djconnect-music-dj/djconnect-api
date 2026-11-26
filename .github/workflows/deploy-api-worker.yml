@@ -184,6 +184,15 @@ jobs:
             python3 "$GITHUB_WORKSPACE/scripts/check_production_d1_migrations.py" \
               "$RUNNER_TEMP/api-operational-manifest.json" migrations "$RUNNER_TEMP/api-d1-ledger.json" "$@"
           }
+          manifest="$RUNNER_TEMP/api-operational-manifest.json"
+          rollback_target="$(jq -er '.live_baseline.cloudflare_deployment_version_id |
+            select(test("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"))' "$manifest")"
+          rollback_source="$(jq -er '.live_baseline.source_sha | select(test("^[0-9a-f]{40}$"))' "$manifest")"
+          test "$(curl --fail --silent --show-error --max-time 15 https://api.djconnect.dev/health |
+            jq -er '.release_sha')" = "$rollback_source"
+          ./node_modules/.bin/wrangler deployments status --name djconnect-api --json |
+            jq -e --arg id "$rollback_target" '.versions | length == 1 and
+              .[0].version_id == $id and .[0].percentage == 100' >/dev/null
           read_migration_ledger
           pending="$(migration_guard)"
           if [[ -n "$pending" ]]; then
