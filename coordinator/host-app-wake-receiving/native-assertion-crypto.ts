@@ -7,6 +7,7 @@ import * as asn1js from 'asn1js';
 import * as pki from 'pkijs';
 import {need} from '../host-app-wake/wire';
 import {RequestWindow} from './request-window';
+import {isAppleBuildAtLeast} from './native-apple-evidence.mjs';
 const bytes=(s:string)=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const equal=(a:Uint8Array,b:Uint8Array)=>a.length===b.length&&a.every((v,i)=>v===b[i]);
 const digest=async(b:Uint8Array)=>new Uint8Array(await crypto.subtle.digest('SHA-256',Uint8Array.from(b)));
@@ -24,14 +25,18 @@ function signature(raw:unknown):Uint8Array{
 }
 export async function verifyNativeAssertionCrypto(encoded:Uint8Array,clientData:Uint8Array,
  key:{public_key_spki_b64:string;native_key_id_b64:string;counter:number},
- p:{profile:string;app_identifier:string;bundle_version:string;launch_validation_category_b64?:string},
+ p:{profile:string;app_identifier:string;bundle_version?:string;minimum_bundle_version?:string;launch_validation_category_b64?:string},
  window:RequestWindow):Promise<number|null>{
  need(Number.isSafeInteger(key.counter)&&key.counter>=0&&key.counter<=0xffffffff,'host_wake_native_stored_counter',503);
 let auth:Uint8Array,rawSig:Uint8Array,counter:number;
  try{
   const obj=closedMap(decode(encoded),['signature','authenticatorData']);const raw=obj.get('authenticatorData');valid(raw instanceof Uint8Array&&raw.length>=38&&raw.length<=2048);auth=raw;
   valid(auth[32]===0xc0);counter=new DataView(auth.buffer,auth.byteOffset,auth.byteLength).getUint32(33,false);valid(counter>key.counter);
-  const props=closedMap(decode(auth.subarray(37)),['apple_bundle_version_01','apple_validation_category_01']);valid(props.get('apple_bundle_version_01')===p.bundle_version);
+  const props=closedMap(decode(auth.subarray(37)),['apple_bundle_version_01','apple_validation_category_01']);
+  const build = props.get('apple_bundle_version_01');
+  valid(typeof build === 'string' && (p.minimum_bundle_version === undefined
+    ? build === p.bundle_version
+    : p.bundle_version === undefined && isAppleBuildAtLeast(build, p.minimum_bundle_version)));
   const category=props.get('apple_validation_category_01');valid(category instanceof Uint8Array&&equal(category,p.profile==='host_wake_apple_assertion_properties_v2'?bytes(p.launch_validation_category_b64!):new Uint8Array([3,0,0,0])));
   rawSig=signature(obj.get('signature'));
  }catch{return null;}

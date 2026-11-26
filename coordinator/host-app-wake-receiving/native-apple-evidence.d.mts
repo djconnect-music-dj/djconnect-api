@@ -6,7 +6,8 @@ export interface NativeAppleEvidencePolicy {
  readonly profile:string;
  readonly app_identifier:string;
  readonly app_attest_environment:string;
- readonly bundle_version:string;
+ readonly bundle_version?:string;
+ readonly minimum_bundle_version?:string;
  readonly launch_validation_category_b64?:string;
  readonly allowed_launch_validation_categories_b64?:readonly string[];
 }
@@ -18,6 +19,7 @@ export interface NativeAppleEvidenceWindow {
 export interface NativeAppleEvidence {
  readonly scope:'APPLE_ATTESTATION_AND_RECEIPT_CRYPTO_STATUS_ONLY_NO_ENROLLMENT';
  readonly launch_validation_category_b64:string;
+ readonly bundle_version:string;
  readonly public_key_spki_b64:string;
  readonly receipt:Uint8Array;
  readonly receiptCreated:number;
@@ -30,4 +32,5 @@ export interface NativeAppleEvidence {
 /** Runtime validates the supplied saved-policy fields and exact Apple evidence.
  * Malformed proof returns null; unavailable status and unexpected crypto reject.
  * No native SDK call, synthetic result port or automatic enrollment is exposed. */
+export function isAppleBuildAtLeast(observed:unknown,minimum:unknown):boolean;
 export function verifyAppleAttestationEvidence(encoded:Uint8Array,clientData:Uint8Array,keyId:string,policy:Readonly<NativeAppleEvidencePolicy>,window:NativeAppleEvidenceWindow,fetcher:typeof fetch):Promise<Readonly<NativeAppleEvidence>|null>;

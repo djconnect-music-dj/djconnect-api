@@ -1843,8 +1843,48 @@ def wrangler_4164_delta():
     return delta
 
 
+SUPPORTED_BUILDS_DELTA_PATH = 'docs/rendezvous/native-ios-supported-builds-source-delta-v1.json'
+SUPPORTED_BUILDS_DELTA_PIN = '339f2a15b852309d6ca9d255f911908f79662e17584dbcc6ffd4afa3ea4ff4dc'
+SUPPORTED_BUILDS_SOURCE_MAP = '3d7f0b99a98034b082a54edf955b88c236615699850b62e8ab19f8e71edca97f'
+SUPPORTED_BUILDS_REFERENCE = 'coordinator/host-app-wake-receiving/runtime/source-inputs.json'
+SUPPORTED_BUILDS_FILES = frozenset((
+    'coordinator/host-app-wake-receiving/native-apple-evidence.mjs',
+    'coordinator/host-app-wake-receiving/native-assertion-crypto.ts',
+    'src/native-push/first-key-apple.ts',
+    'src/native-push/installation-first-key.ts',
+    'src/native-push/installation-policy.ts',
+    'src/native-push/installation-reauthorization.ts',
+))
+SOURCE_PROVENANCE.update(native_ios_supported_builds_delta_sha256=SUPPORTED_BUILDS_DELTA_PIN,
+                         native_ios_supported_builds_source_map_sha256=SUPPORTED_BUILDS_SOURCE_MAP)
+
+
+def supported_builds_delta():
+    delta = pinned_working_proof(SUPPORTED_BUILDS_DELTA_PATH, SUPPORTED_BUILDS_DELTA_PIN)
+    require(type(delta['schema_version']) is int and delta['schema_version'] == 1
+            and delta['scope'] == 'IOS_SUPPORTED_BUILDS_SOURCE_ONLY'
+            and delta['production_effect_authorized'] is False
+            and set(delta['changes']) == SUPPORTED_BUILDS_FILES
+            and set(delta['reference_changes']) == {SUPPORTED_BUILDS_REFERENCE}
+            and delta['baseline_source_map_sha256'] == WRANGLER_4164_SOURCE_MAP_SHA256
+            and delta['effective_source_map_sha256'] == SUPPORTED_BUILDS_SOURCE_MAP)
+    return delta
+
+
+def supported_builds_previous_bytes(name, raw):
+    if name not in SUPPORTED_BUILDS_FILES and name != SUPPORTED_BUILDS_REFERENCE:
+        return raw
+    delta = supported_builds_delta()
+    change = delta['changes'].get(name) or delta['reference_changes'].get(name)
+    import base64
+    previous = base64.b64decode(change['previous_bytes_b64'], validate=True)
+    require(digest(raw) == change['after'] and digest(previous) == change['before']
+            and change['after'] != change['before'])
+    return previous
+
+
 def wrangler_4164_previous_bytes(name):
-    raw = safe_path(name).read_bytes()
+    raw = supported_builds_previous_bytes(name, safe_path(name).read_bytes())
     if name not in WRANGLER_4160_SOURCES | WRANGLER_4164_REFERENCES:
         return raw
     delta = wrangler_4164_delta()
@@ -1887,6 +1927,13 @@ def baseline():
     refs[WRANGLER_4164_PREVIOUS_PROVENANCE] = WRANGLER_4164_PREVIOUS_PROVENANCE_SHA256
     refs[WRANGLER_4164_PROVENANCE] = new_pin
     refs[WRANGLER_4164_DELTA_PATH] = WRANGLER_4164_DELTA_SHA256
+    supported = supported_builds_delta()
+    for target, changes in ((sources, supported['changes']), (refs, supported['reference_changes'])):
+        for name, change in changes.items():
+            require(target[name] == change['before'])
+            target[name] = change['after']
+    require(source_map_digest(sources) == SUPPORTED_BUILDS_SOURCE_MAP)
+    refs[SUPPORTED_BUILDS_DELTA_PATH] = SUPPORTED_BUILDS_DELTA_PIN
     return sources, refs
 
 

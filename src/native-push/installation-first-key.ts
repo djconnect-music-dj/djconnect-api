@@ -42,7 +42,7 @@ export function createInstallationFirstKey(db: D1Database, origin: string, curre
        event.core_key_thumbprint, event.request_expires_at_ms] };
     }, "installation")(request);
    }
-   if (!selected || selected.id !== "ios-native-push-development-40533/1" ||
+   if (!selected || selected.id !== installationNativePolicy.id ||
        selected.expiresAt !== installationNativePolicy.expiresAt ||
        canonical(selected.apple) !== canonical(installationNativePolicy.apple) ||
        !Number.isSafeInteger(selected.expiresAt) || Date.now() >= selected.expiresAt || !current())

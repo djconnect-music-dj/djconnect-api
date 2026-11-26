@@ -138,7 +138,7 @@ beforeEach(async () => {
   apple_assertion_policy_json=?,apple_counter=0,apple_evidence_expires_at_ms=?,apple_status_expires_at_ms=?`)
   .bind(base64Encode(new Uint8Array(32)),base64Encode(new Uint8Array(spki)),
    canonical({profile:"host_wake_apple_assertion_properties_v2",app_identifier:installationNativePolicy.apple.app_identifier,
-    bundle_version:installationNativePolicy.apple.bundle_version,launch_validation_category_b64:"AwAAAA=="}),
+    bundle_version:installationNativePolicy.apple.minimum_bundle_version,launch_validation_category_b64:"AwAAAA=="}),
    Date.now()+240000,Date.now()+240000).run();
  const jwk = await crypto.subtle.exportKey("jwk", key.publicKey) as JsonWebKey;
  declaration = { contract_version: 1, purpose: "surface_push", action: "enrol", operation_id: op(),
@@ -286,7 +286,7 @@ async function reauthorizationPrepared() {
   apple_assertion_policy_json=?,apple_counter=0,apple_evidence_expires_at_ms=?,apple_status_expires_at_ms=?`)
   .bind(appleID,base64Encode(new Uint8Array(await crypto.subtle.exportKey("spki",apple.publicKey))),
    canonical({profile:"host_wake_apple_assertion_properties_v2",app_identifier:installationNativePolicy.apple.app_identifier,
-    bundle_version:installationNativePolicy.apple.bundle_version,launch_validation_category_b64:"AwAAAA=="}),
+    bundle_version:installationNativePolicy.apple.minimum_bundle_version,launch_validation_category_b64:"AwAAAA=="}),
    Date.now()+240000,Date.now()+240000).run();
  const publisher=createInstallationPublisher(db,origin,()=>true);
  expect((await publisher(post("/v1/push/native/installation/publisher/withdraw",
@@ -302,8 +302,8 @@ async function reauthorizationPrepared() {
   publication_operation_id:publication.operation_id,delegation:next,signature},credential.token));
  const challenge=await challengeResponse.json() as Record<string,unknown>;
  expect(challengeResponse.status,JSON.stringify(challenge)).toBe(200);
- async function assertion(counter=1,selectedChallenge=challenge,selectedDelegation=next) {
-  const props=cbor.encode(new Map<string,unknown>([["apple_bundle_version_01",installationNativePolicy.apple.bundle_version],
+ async function assertion(counter=1,selectedChallenge=challenge,selectedDelegation=next, build="40547") {
+  const props=cbor.encode(new Map<string,unknown>([["apple_bundle_version_01",build],
    ["apple_validation_category_01",Buffer.from([3,0,0,0])]]));
   const auth=new Uint8Array(37+props.length);
   auth.set(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(installationNativePolicy.apple.app_identifier))));
@@ -409,6 +409,13 @@ it("a changed original declaration cannot consume the saved role challenge or su
  expect((await x.handler(post(reauthorizationPrefix+"register",forged,credential.token))).status).toBe(409);
  expect(await db.prepare("SELECT outcome FROM native_installation_role_challenges").first("outcome")).toBe("pending");
  expect((await x.handler(post(reauthorizationPrefix+"register",body,credential.token))).status).toBe(200);
+});
+it("does not advance the saved counter when a signed assertion reports an older unsupported build", async () => {
+ const prepared = await reauthorizationPrepared();
+ const body = await prepared.assertion(1, prepared.challenge, prepared.next, "40532");
+ const response = await prepared.handler(post(reauthorizationPrefix+"register",body,credential.token));
+ expect(response.status).toBe(403);
+ expect(await db.prepare("SELECT apple_counter FROM native_installation_first_key").first("apple_counter")).toBe(0);
 });
 it("initial role cannot promote an old receipt missing genuine native metadata or overrun its actual evidence deadline",async()=>{
  await db.prepare("UPDATE native_installation_first_key SET apple_status_expires_at_ms=?").bind(Date.now()+30000).run();
