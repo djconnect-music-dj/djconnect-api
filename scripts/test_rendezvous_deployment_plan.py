@@ -192,6 +192,8 @@ class PreparationTests(unittest.TestCase):
             pinned.update({name: change['after'] for name, change in {**policy_delta['changes'], **policy_delta['reference_changes']}.items()})
             toolchain_delta = v.wrangler_4164_delta()
             pinned.update({name: change['after'] for name, change in {**toolchain_delta['changes'], **toolchain_delta['reference_changes']}.items()})
+            supported = v.supported_builds_delta()
+            pinned.update({name: change['after'] for name, change in supported['changes'].items()})
             for path in additions:
                 raw = (canonical / path).read_bytes()
                 expected = pinned[path]

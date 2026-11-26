@@ -190,7 +190,7 @@ async function supportedBuildsLayer() {
  return delta;
 }
 
-async function supportedBuildsPrevious(name, raw) {
+export async function supportedBuildsPrevious(name, raw) {
  const delta = await supportedBuildsLayer();
  const change = delta.changes[name];
  if (!change) return raw;

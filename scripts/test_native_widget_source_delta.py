@@ -39,7 +39,7 @@ class NativeWidgetSourceDeltaTests(unittest.TestCase):
         self.assertEqual(len(delta['changes']), 5)
         self.assertEqual(len(delta['additions']), 15)
         for name, pin in {**delta['additions'], **delta['reference_additions']}.items():
-            self.assertEqual(v.digest(v.counter_previous_bytes(name, (v.ROOT / name).read_bytes())), pin)
+            self.assertEqual(v.digest(v.counter_previous_bytes(name, v.wrangler_4164_previous_bytes(name))), pin)
 
     def test_counter_successor_reconstructs_each_exact_predecessor_and_rejects_actual_drift(self):
         delta = v.counter_widget_delta()
@@ -63,7 +63,7 @@ class NativeWidgetSourceDeltaTests(unittest.TestCase):
         delta = v.ack_bounds_delta()
         self.assertEqual(len(delta['changes']), 2)
         for name, change in {**delta['changes'], **delta['reference_changes']}.items():
-            raw = (v.ROOT / name).read_bytes()
+            raw = v.wrangler_4164_previous_bytes(name)
             self.assertEqual(v.digest(v.ack_previous_bytes(name, raw)), change['before'])
             with self.assertRaises(ValueError):
                 v.ack_previous_bytes(name, raw + b'\n')
@@ -102,7 +102,7 @@ class NativeWidgetSourceDeltaTests(unittest.TestCase):
         delta = v.policy40533_delta()
         self.assertEqual(len(delta['changes']), 3)
         for name, change in {**delta['changes'], **delta['reference_changes']}.items():
-            raw = (v.ROOT / name).read_bytes()
+            raw = v.wrangler_4164_previous_bytes(name)
             self.assertEqual(v.digest(v.policy40533_previous_bytes(name, raw)), change['before'])
             with self.assertRaises(ValueError):
                 v.policy40533_previous_bytes(name, raw + b'\n')
