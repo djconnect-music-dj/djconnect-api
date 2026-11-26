@@ -86,7 +86,7 @@
     "docs/rendezvous/active-ci-retention-source-delta-v1.json": "a474ec1ca6579b0892348be55c06ab0122105615d379f7727357b4a401ce56db",
     "docs/rendezvous/native-first-category-source-delta-v1.json": "6c0a6e47f00057881fd4ecdab64c626c91a583617fe5ae6376c62cafbf06960e",
     "docs/rendezvous/private-receiving-mount-source-delta-v1.json": "8d4c6f7343c37bea54ac53709dd49d1c01e28a2d2ebe19a0102448cc7fccc960",
-    "coordinator/host-app-wake-receiving/runtime/source-inputs.json": "3d7c66469cc1091f1afb65a5b28b5715b2b67dfc2837b677d6dc5469fd879477",
+    "coordinator/host-app-wake-receiving/runtime/source-inputs.json": "e0cfbd8517014cc8db190b0f71000474137641723d5081d34a9a90d65846cbb9",
     "coordinator/installation-principal/source-manifest.json": "05f39e78da07cca2bda1863aa6847fc00af175733fed501eb9ab66039033d419",
     "coordinator/host-app-wake/source-manifest.json": "d44246da056923d80a4b2e67d7546f59d4e770afa820dbc9ee00fa06d4b823d7",
     "coordinator/principal-possession/source-manifest.json": "0402e8c08190b17b1c7a3afd060e2701161ddd7ea0f61ac212e6c7646ad4aea8",
@@ -151,7 +151,7 @@
     "docs/rendezvous/wrangler-4164-toolchain-source-delta-v1.json": "097e0869b700c8ee85967bbbe452c305bb0e036755b8430f1afae38d4ea66ef8",
     "qualification/rendezvous/compatible-runtime-dependency-provenance-v7.json": "da360a3235824c2eb5daba56ff46be0627e85645a4714ce3dd34ff9c06ddd0f1",
     "qualification/rendezvous/compatible-runtime-dependency-provenance-v8.json": "6ad440523b8094a271fe6e7cdc3cb34270a4da8f0d9cd5c2f724cfdd0d3be2b2",
-    "docs/rendezvous/native-ios-supported-builds-source-delta-v1.json": "30b851d0fd7ca922d2321cf27b892237ec2c7142d5e5c726a9b74218fef3644e"
+    "docs/rendezvous/native-ios-supported-builds-source-delta-v1.json": "339f2a15b852309d6ca9d255f911908f79662e17584dbcc6ffd4afa3ea4ff4dc"
   },
   "schema_version": 1,
   "secret_names": [
@@ -398,7 +398,7 @@
     "native_ios40533_policy_source_map_sha256": "60d8a89d9d7136e83aea913deeb77ee7614f39342a0c6891e6d88347ca4de685",
     "wrangler_4164_delta_sha256": "097e0869b700c8ee85967bbbe452c305bb0e036755b8430f1afae38d4ea66ef8",
     "wrangler_4164_source_map_sha256": "cc1552857429152223ba313e6563a4f120adb31de5041677855059d597a6cfd4",
-    "native_ios_supported_builds_delta_sha256": "30b851d0fd7ca922d2321cf27b892237ec2c7142d5e5c726a9b74218fef3644e",
+    "native_ios_supported_builds_delta_sha256": "339f2a15b852309d6ca9d255f911908f79662e17584dbcc6ffd4afa3ea4ff4dc",
     "native_ios_supported_builds_source_map_sha256": "3d7f0b99a98034b082a54edf955b88c236615699850b62e8ab19f8e71edca97f"
   },
   "status": "NOT_AUTHORIZED",

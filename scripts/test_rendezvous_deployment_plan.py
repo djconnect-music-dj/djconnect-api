@@ -155,7 +155,7 @@ class PreparationTests(unittest.TestCase):
                          *v.WRANGLER_4160_SOURCES, *v.WRANGLER_4160_REFERENCES,
                          v.WRANGLER_4160_PROVENANCE, v.WRANGLER_4160_DELTA_PATH,
                          v.WRANGLER_4164_PROVENANCE, v.WRANGLER_4164_PREVIOUS_PROVENANCE,
-                         v.WRANGLER_4164_DELTA_PATH,
+                         v.WRANGLER_4164_DELTA_PATH, v.SUPPORTED_BUILDS_DELTA_PATH, *v.SUPPORTED_BUILDS_FILES,
                          *v.ORG_GOVERNANCE_SOURCES, *v.ORG_GOVERNANCE_REFERENCES,
                          v.ORG_GOVERNANCE_DELTA_PATH,
                          v.POLICY40533_DELTA_PATH, *v.POLICY40533_REFERENCE_ADDITIONS, v.CANONICAL_PIN_DELTA_PATH, v.NATIVE_WIDGET_DELTA_PATH, v.COUNTER_WIDGET_DELTA_PATH, v.ACK_BOUNDS_DELTA_PATH, v.UNIQUE_APPLE_DELTA_PATH, *v.UNIQUE_APPLE_ADDITIONS, *v.NATIVE_WIDGET_CHANGES, *v.NATIVE_WIDGET_ADDITIONS, *v.NATIVE_WIDGET_REFERENCE_CHANGES, *v.NATIVE_WIDGET_REFERENCE_ADDITIONS, v.API_CORE_IDENTITY_DELTA_PATH, v.API_ORG_RELEASE_DELTA_PATH, v.API_ORG_CORE_AUTHORITY_DELTA_PATH,
@@ -193,8 +193,8 @@ class PreparationTests(unittest.TestCase):
             toolchain_delta = v.wrangler_4164_delta()
             pinned.update({name: change['after'] for name, change in {**toolchain_delta['changes'], **toolchain_delta['reference_changes']}.items()})
             supported = v.supported_builds_delta()
-            pinned.update({name: change['after'] for name, change in supported['changes'].items()})
-            for path in additions:
+            pinned.update({name: change['after'] for name, change in {**supported['changes'], **supported['reference_changes']}.items()})
+            for path in dict.fromkeys(additions):
                 raw = (canonical / path).read_bytes()
                 expected = pinned[path]
                 self.assertEqual(v.digest(raw), expected)

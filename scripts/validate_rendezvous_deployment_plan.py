@@ -1844,8 +1844,9 @@ def wrangler_4164_delta():
 
 
 SUPPORTED_BUILDS_DELTA_PATH = 'docs/rendezvous/native-ios-supported-builds-source-delta-v1.json'
-SUPPORTED_BUILDS_DELTA_PIN = '30b851d0fd7ca922d2321cf27b892237ec2c7142d5e5c726a9b74218fef3644e'
+SUPPORTED_BUILDS_DELTA_PIN = '339f2a15b852309d6ca9d255f911908f79662e17584dbcc6ffd4afa3ea4ff4dc'
 SUPPORTED_BUILDS_SOURCE_MAP = '3d7f0b99a98034b082a54edf955b88c236615699850b62e8ab19f8e71edca97f'
+SUPPORTED_BUILDS_REFERENCE = 'coordinator/host-app-wake-receiving/runtime/source-inputs.json'
 SUPPORTED_BUILDS_FILES = frozenset((
     'coordinator/host-app-wake-receiving/native-apple-evidence.mjs',
     'coordinator/host-app-wake-receiving/native-assertion-crypto.ts',
@@ -1864,16 +1865,18 @@ def supported_builds_delta():
             and delta['scope'] == 'IOS_SUPPORTED_BUILDS_SOURCE_ONLY'
             and delta['production_effect_authorized'] is False
             and set(delta['changes']) == SUPPORTED_BUILDS_FILES
+            and set(delta['reference_changes']) == {SUPPORTED_BUILDS_REFERENCE}
             and delta['baseline_source_map_sha256'] == WRANGLER_4164_SOURCE_MAP_SHA256
             and delta['effective_source_map_sha256'] == SUPPORTED_BUILDS_SOURCE_MAP)
     return delta
 
 
 def supported_builds_previous_bytes(name, raw):
-    if name not in SUPPORTED_BUILDS_FILES:
+    if name not in SUPPORTED_BUILDS_FILES and name != SUPPORTED_BUILDS_REFERENCE:
         return raw
+    delta = supported_builds_delta()
+    change = delta['changes'].get(name) or delta['reference_changes'].get(name)
     import base64
-    change = supported_builds_delta()['changes'][name]
     previous = base64.b64decode(change['previous_bytes_b64'], validate=True)
     require(digest(raw) == change['after'] and digest(previous) == change['before']
             and change['after'] != change['before'])
@@ -1925,9 +1928,10 @@ def baseline():
     refs[WRANGLER_4164_PROVENANCE] = new_pin
     refs[WRANGLER_4164_DELTA_PATH] = WRANGLER_4164_DELTA_SHA256
     supported = supported_builds_delta()
-    for name, change in supported['changes'].items():
-        require(sources[name] == change['before'])
-        sources[name] = change['after']
+    for target, changes in ((sources, supported['changes']), (refs, supported['reference_changes'])):
+        for name, change in changes.items():
+            require(target[name] == change['before'])
+            target[name] = change['after']
     require(source_map_digest(sources) == SUPPORTED_BUILDS_SOURCE_MAP)
     refs[SUPPORTED_BUILDS_DELTA_PATH] = SUPPORTED_BUILDS_DELTA_PIN
     return sources, refs

@@ -179,7 +179,7 @@ export function wrangler4164Previous(name,raw,delta){
 }
 
 const supportedBuildsPath = 'docs/rendezvous/native-ios-supported-builds-source-delta-v1.json';
-const supportedBuildsPin = '30b851d0fd7ca922d2321cf27b892237ec2c7142d5e5c726a9b74218fef3644e';
+const supportedBuildsPin = '339f2a15b852309d6ca9d255f911908f79662e17584dbcc6ffd4afa3ea4ff4dc';
 
 async function supportedBuildsLayer() {
  const raw = await readFile(join(repo, supportedBuildsPath));
@@ -192,7 +192,7 @@ async function supportedBuildsLayer() {
 
 export async function supportedBuildsPrevious(name, raw) {
  const delta = await supportedBuildsLayer();
- const change = delta.changes[name];
+ const change = delta.changes[name] ?? delta.reference_changes[name];
  if (!change) return raw;
  const previous = Buffer.from(change.previous_bytes_b64, 'base64');
  need(sha(raw) === change.after && sha(previous) === change.before);
@@ -219,10 +219,12 @@ export async function sourceSnapshot(){
       publishedPlan.source_provenance.native_ios_supported_builds_delta_sha256 === supportedBuildsPin &&
       publishedPlan.source_provenance.native_ios_supported_builds_source_map_sha256 === supported.effective_source_map_sha256 &&
       supported.effective_source_map_sha256 === mapHash(publishedPlan.source_hashes));
- for (const [name, change] of Object.entries(supported.changes)) {
-  need(plan.source_hashes[name] === change.after);
-  await supportedBuildsPrevious(name, await readFile(join(repo, name)));
-  plan.source_hashes[name] = change.before;
+ for (const [hashes, changes] of [[plan.source_hashes, supported.changes], [plan.reference_hashes, supported.reference_changes]]) {
+  for (const [name, change] of Object.entries(changes)) {
+   need(hashes[name] === change.after);
+   await supportedBuildsPrevious(name, await readFile(join(repo, name)));
+   hashes[name] = change.before;
+  }
  }
  delete plan.reference_hashes[supportedBuildsPath];
  const wrangler4164SourceMap = mapHash(plan.source_hashes);
