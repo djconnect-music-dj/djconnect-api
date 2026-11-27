@@ -18,7 +18,7 @@ export async function upsertRegistration(db: D1Database, env: { APNS_TOPIC_IOS: 
 	const id = cryptoRandomId();
 	const apnsEnvironment = input.apns_environment ?? env.APNS_ENVIRONMENT;
 	const topic = topicForClientType(env, input.client_type);
-	const categories = JSON.stringify(input.categories ?? ["ask_dj"]);
+	const categories = JSON.stringify(input.categories ?? []);
 
 	const persisted = await db.prepare(`
 		INSERT INTO registrations (
@@ -103,8 +103,8 @@ export async function findActiveRegistrations(db: D1Database, input: PushEventRe
 
 export async function isRegistrationCurrent(db: D1Database, registration: Registration): Promise<boolean> {
 	const row = await db.prepare(`SELECT 1 FROM registrations
-		WHERE id = ? AND apns_token_nonce IS ? AND categories_json = ? AND disabled = 0 AND invalid = 0`)
-		.bind(registration.id, registration.apns_token_nonce, registration.categories_json).first();
+		WHERE id = ? AND apns_token_nonce IS ? AND disabled = 0 AND invalid = 0`)
+		.bind(registration.id, registration.apns_token_nonce).first();
 	return row !== null;
 }
 

@@ -62,11 +62,28 @@ function nestedField(
 	need(seen <= observed && observed < expires && richExpiry <= expires);
 }
 
+/** Called only after strict parsing confirms a unique top-level rich object. */
+function richObjectBytes(source: string): number {
+	let depth = 0, start: number | undefined, expectKey = false, rich = false;
+	for (const token of source.matchAll(/"(?:[^"\\]|\\[\s\S])*"|[{}\[\],]/g)) {
+		const value = token[0];
+		if (value === "{" || value === "[") {
+			if (depth === 1 && rich) start = token.index;
+			if (++depth === 1) expectKey = true;
+		} else if (value === "}" || value === "]") {
+			if (--depth === 1 && start !== undefined) return encoder.encode(source.slice(start, token.index + 1)).length;
+		} else if (depth === 1 && value === ",") {
+			expectKey = true;
+		} else if (depth === 1 && expectKey) {
+			rich = JSON.parse(value) === "rich";
+			expectKey = false;
+		}
+	}
+	throw new SurfaceError(400, "invalid_json");
+}
+
 function validateState(source: string): void {
-	let richBytes = 0;
-	const state = object(parseStrictJson(source, (depth, key, start, end) => {
-		if (depth === 0 && key === "rich") richBytes = encoder.encode(source.slice(start, end)).length;
-	}), ["observedAt", "expiresAt"], ["theme", "rich"]);
+	const state = object(parseStrictJson(source), ["observedAt", "expiresAt"], ["theme", "rich"]);
 	const observed = state.observedAt, expires = state.expiresAt;
 	finite(observed); finite(expires);
 	need(observed < expires && expires - observed <= fieldLimit);
@@ -75,9 +92,9 @@ function validateState(source: string): void {
 		need(["brand", "chill", "groove", "energy", "party"].includes(state.theme));
 	}
 	if (state.rich === undefined) return;
-	need(richBytes <= 2800, "surface_content_too_large", 413);
 	const rich = object(state.rich, ["bindingID", "generation", "sequence", "receivedAt", "receivedUptime", "expiresAt"],
 		["contribution", "nowPlaying", "playbackState"]);
+	need(richObjectBytes(source) <= 2800, "surface_content_too_large", 413);
 	identifier(rich.bindingID); identifier(rich.generation);
 	need(typeof rich.sequence === "number" && Number.isSafeInteger(rich.sequence) && rich.sequence >= 0);
 	const start = rich.receivedAt, uptime = rich.receivedUptime, end = rich.expiresAt;

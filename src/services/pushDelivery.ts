@@ -1,6 +1,6 @@
 import { buildApnsPayload, isInvalidTokenReason, sendApns } from "../apns";
-import { auditEvent, findActiveRegistrations, isRegistrationCurrent, markRegistrationError, markRegistrationSuccess } from "../repository";
-import type { AppEnv, ClientType, PushEventRequest, PushFailureSummary } from "../types";
+import { auditEvent, findActiveRegistrations, markRegistrationError, markRegistrationSuccess } from "../repository";
+import type { AppEnv, ClientType, PushEventRequest, PushFailureSummary, Registration } from "../types";
 
 export interface PushDeliveryResult {
 	matched: number;
@@ -18,8 +18,18 @@ function allowsAskDJ(registration: { categories_json: string }): boolean {
 	}
 }
 
-export async function deliverPushEvent(env: AppEnv, input: PushEventRequest): Promise<PushDeliveryResult> {
-	const registrations = await findActiveRegistrations(env.DB, input);
+export async function isAlertRecipientCurrent(db: D1Database, registration: Registration): Promise<boolean> {
+	const row = await db.prepare(`SELECT 1 FROM registrations
+		WHERE id = ? AND apns_token_nonce IS ? AND categories_json = ? AND disabled = 0 AND invalid = 0`)
+		.bind(registration.id, registration.apns_token_nonce, registration.categories_json).first();
+	return row !== null;
+}
+
+export async function deliverPushEvent(env: AppEnv, input: PushEventRequest, deviceID?: string): Promise<PushDeliveryResult> {
+	const scoped = await findActiveRegistrations(env.DB, input);
+	const matched = deviceID === undefined ? scoped : scoped.filter(row => row.device_id === deviceID);
+	// Token rotation must leave a single current registration for targeted delivery.
+	const registrations = deviceID !== undefined && matched.length !== 1 ? [] : matched;
 	let delivered = 0;
 	let failed = 0;
 	const failures = new Map<string, PushFailureSummary>();
@@ -29,7 +39,7 @@ export async function deliverPushEvent(env: AppEnv, input: PushEventRequest): Pr
 		if (!allowsAskDJ(registration)) continue;
 		const payload = buildApnsPayload({ ...input, locale: registration.locale });
 		const result = await sendApns(env, registration, payload, async (endpoint, options) => {
-			if (!await isRegistrationCurrent(env.DB, registration)) throw registrationChanged;
+			if (!await isAlertRecipientCurrent(env.DB, registration)) throw registrationChanged;
 			return fetch(endpoint, options);
 		}).catch((error: unknown) => {
 			if (error === registrationChanged) return null;
