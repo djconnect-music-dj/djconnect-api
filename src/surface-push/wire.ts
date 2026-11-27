@@ -21,7 +21,7 @@ function keys(value: Record<string, unknown>, required: string[], optional: stri
 function id(value: unknown): asserts value is string { need(typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value)); }
 function integer(value: unknown, minimum: number): asserts value is number { need(Number.isSafeInteger(value) && (value as number) >= minimum); }
 /** Parse with duplicate-key rejection, including escaped duplicate keys; no JSON reviver ambiguity. */
-export function parseStrictJson(text: string): unknown {
+export function parseStrictJson(text: string, propertyRange?: (depth: number, key: string, start: number, end: number) => void): unknown {
  let at = 0;
  const ws = () => { while (/[\x20\x09\x0a\x0d]/.test(text[at] ?? "x")) at++; };
  const string = (): string => {
@@ -35,7 +35,16 @@ export function parseStrictJson(text: string): unknown {
   if (ch === "{") {
    at++; ws(); const result: Record<string, unknown> = Object.create(null);
    if (text[at] === "}") { at++; return result; }
-   while (true) { ws(); const key = string(); need(!Object.hasOwn(result, key), "duplicate_json_key"); ws(); need(text[at++] === ":", "invalid_json"); result[key] = value(depth + 1); ws(); const end = text[at++]; if (end === "}") return result; need(end === ",", "invalid_json"); }
+   while (true) {
+    ws(); const key = string(); need(!Object.hasOwn(result, key), "duplicate_json_key");
+    ws(); need(text[at++] === ":", "invalid_json");
+    ws(); const start = at;
+    result[key] = value(depth + 1);
+    propertyRange?.(depth, key, start, at);
+    ws(); const end = text[at++];
+    if (end === "}") return result;
+    need(end === ",", "invalid_json");
+   }
   }
   if (ch === "[") {
    at++; ws(); const result: unknown[] = []; if (text[at] === "]") { at++; return result; }
