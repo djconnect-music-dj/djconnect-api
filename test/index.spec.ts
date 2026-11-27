@@ -608,6 +608,34 @@ describe("DJConnect API worker", () => {
 		expect(JSON.stringify(payload)).toContain("Ask DJ attend votre choix.");
 	});
 
+	it("does not deliver Ask DJ alerts to Moment-only or explicitly disabled app registrations", async () => {
+		const authorization = await issueInstallAuth("example-ha-install");
+		await registerDevice(authorization, {
+			device_id: "example-moments-only",
+			apns_token: "example-moments-only-token",
+			categories: ["dj_moments_v1"],
+		});
+		await registerDevice(authorization, {
+			device_id: "example-disabled-alerts",
+			apns_token: "example-disabled-alerts-token",
+			categories: [],
+		});
+		await registerDevice(authorization, {
+			device_id: "example-ask-dj-only",
+			apns_token: "example-ask-dj-only-token",
+			categories: ["ask_dj"],
+		});
+		const provider = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+		const result = await dispatch("/v1/push/event", {
+			ha_install_id: "example-ha-install",
+			event_type: "ask_dj_response",
+		}, authorization);
+		expect(result.status).toBe(200);
+		expect(await result.json()).toMatchObject({ matched: 1, delivered: 1 });
+		expect(provider).toHaveBeenCalledOnce();
+		expect(String(provider.mock.calls[0]?.[0])).toContain("example-ask-dj-only-token");
+	});
+
 	it("rejects push event payloads with raw prompt, response, history, memory or token fields", async () => {
 		const installAuth = await issueInstallAuth("example-ha-install");
 		for (const unsafe of [

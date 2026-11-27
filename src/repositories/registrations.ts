@@ -18,7 +18,7 @@ export async function upsertRegistration(db: D1Database, env: { APNS_TOPIC_IOS: 
 	const id = cryptoRandomId();
 	const apnsEnvironment = input.apns_environment ?? env.APNS_ENVIRONMENT;
 	const topic = topicForClientType(env, input.client_type);
-	const categories = JSON.stringify(input.categories ?? []);
+	const categories = JSON.stringify(input.categories ?? ["ask_dj"]);
 
 	const persisted = await db.prepare(`
 		INSERT INTO registrations (

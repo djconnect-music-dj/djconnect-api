@@ -9,6 +9,15 @@ export interface PushDeliveryResult {
 	audit: Promise<void>;
 }
 
+function allowsAskDJ(registration: { categories_json: string }): boolean {
+	try {
+		const categories: unknown = JSON.parse(registration.categories_json);
+		return Array.isArray(categories) && categories.includes("ask_dj");
+	} catch {
+		return false;
+	}
+}
+
 export async function deliverPushEvent(env: AppEnv, input: PushEventRequest): Promise<PushDeliveryResult> {
 	const registrations = await findActiveRegistrations(env.DB, input);
 	let delivered = 0;
@@ -17,6 +26,7 @@ export async function deliverPushEvent(env: AppEnv, input: PushEventRequest): Pr
 	const registrationChanged = new Error("registration_changed");
 
 	for (const registration of registrations) {
+		if (!allowsAskDJ(registration)) continue;
 		const payload = buildApnsPayload({ ...input, locale: registration.locale });
 		const result = await sendApns(env, registration, payload, async (endpoint, options) => {
 			if (!await isRegistrationCurrent(env.DB, registration)) throw registrationChanged;
