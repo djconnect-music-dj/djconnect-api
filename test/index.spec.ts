@@ -6,6 +6,9 @@ import { assertCompleteTranslations, MESSAGES, SUPPORTED_LANGUAGES } from "../sr
 import erasureMigration from "../migrations/0013_push_registration_erasure.sql?raw";
 import { purgePushDeliveryDiagnostics } from "../src/repositories/auditEvents";
 
+import { isRegistrationCurrent } from "../src/repositories/registrations";
+import type { Registration } from "../src/types";
+
 const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 const EXAMPLE_RELAY_SECRET = "example-relay-secret";
 const EXAMPLE_PAIRING_ISSUER_SECRET = "example-pairing-issuer-secret";
@@ -634,6 +637,17 @@ describe("DJConnect API worker", () => {
 		expect(await result.json()).toMatchObject({ matched: 1, delivered: 1 });
 		expect(provider).toHaveBeenCalledOnce();
 		expect(String(provider.mock.calls[0]?.[0])).toContain("example-ask-dj-only-token");
+	});
+
+	it("invalidates the in-flight recipient when its consent changes without token rotation", async () => {
+		const authorization = await issueInstallAuth("example-ha-install");
+		await registerDevice(authorization);
+		const original = await env.DB.prepare("SELECT * FROM registrations").first<Registration>();
+		expect(original).not.toBeNull();
+		expect(await isRegistrationCurrent(env.DB, original!)).toBe(true);
+		await env.DB.prepare("UPDATE registrations SET categories_json=? WHERE id=?")
+			.bind('["dj_moments_v1"]', original!.id).run();
+		expect(await isRegistrationCurrent(env.DB, original!)).toBe(false);
 	});
 
 	it("rejects push event payloads with raw prompt, response, history, memory or token fields", async () => {
