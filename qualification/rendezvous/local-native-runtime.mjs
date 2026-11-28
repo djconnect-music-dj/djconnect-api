@@ -190,7 +190,27 @@ async function supportedBuildsLayer() {
  return delta;
 }
 
+const applePushRoutingPath = 'docs/rendezvous/apple-push-routing-source-delta-v1.json';
+const applePushRoutingPin = '6a503fe0936a659429ba77944bf24aef939ba267a1048421af50ef3ded700c77';
+async function applePushRoutingLayer() {
+ const raw = await readFile(join(repo,applePushRoutingPath));
+ need(sha(raw) === applePushRoutingPin);
+ const delta = JSON.parse(raw);
+ need(delta.schema_version === 1 && delta.scope === 'APPLE_PUSH_ROUTING_SOURCE_ONLY' &&
+      delta.production_effect_authorized === false);
+ return delta;
+}
+
+async function applePushRoutingPrevious(name, raw) {
+ const change = (await applePushRoutingLayer()).changes[name];
+ if (!change) return raw;
+ const previous = Buffer.from(change.previous_bytes_b64,'base64');
+ need(sha(raw) === change.after && sha(previous) === change.before);
+ return previous;
+}
+
 export async function supportedBuildsPrevious(name, raw) {
+ raw = await applePushRoutingPrevious(name, raw);
  const delta = await supportedBuildsLayer();
  const change = delta.changes[name] ?? delta.reference_changes[name];
  if (!change) return raw;
@@ -214,11 +234,27 @@ export async function sourceSnapshot(){
  need(publishedPlan.reference_hashes[wrangler4164Path]===wrangler4164Pin&&
   publishedPlan.reference_hashes[wrangler4164Provenance]===wrangler4164.reference_additions[wrangler4164Provenance]);
  const plan={...publishedPlan,source_hashes:{...publishedPlan.source_hashes},reference_hashes:{...publishedPlan.reference_hashes}};
+ const push = await applePushRoutingLayer();
+ need(plan.reference_hashes[applePushRoutingPath] === applePushRoutingPin &&
+      publishedPlan.source_provenance.apple_push_routing_delta_sha256 === applePushRoutingPin &&
+      publishedPlan.source_provenance.apple_push_routing_source_map_sha256 === push.effective_source_map_sha256 &&
+      mapHash(plan.source_hashes) === push.effective_source_map_sha256);
+ for (const [name,change] of Object.entries(push.changes)) {
+  need(plan.source_hashes[name] === change.after);
+  await applePushRoutingPrevious(name,await readFile(join(repo,name)));
+  plan.source_hashes[name] = change.before;
+ }
+ for (const [name,pin] of Object.entries(push.reference_additions)) {
+  need(plan.reference_hashes[name] === pin && sha(await readFile(join(repo,name))) === pin);
+  delete plan.reference_hashes[name];
+ }
+ delete plan.reference_hashes[applePushRoutingPath];
+ need(mapHash(plan.source_hashes) === push.baseline_source_map_sha256);
  const supported = await supportedBuildsLayer();
  need(publishedPlan.reference_hashes[supportedBuildsPath] === supportedBuildsPin &&
       publishedPlan.source_provenance.native_ios_supported_builds_delta_sha256 === supportedBuildsPin &&
       publishedPlan.source_provenance.native_ios_supported_builds_source_map_sha256 === supported.effective_source_map_sha256 &&
-      supported.effective_source_map_sha256 === mapHash(publishedPlan.source_hashes));
+      supported.effective_source_map_sha256 === mapHash(plan.source_hashes));
  for (const [hashes, changes] of [[plan.source_hashes, supported.changes], [plan.reference_hashes, supported.reference_changes]]) {
   for (const [name, change] of Object.entries(changes)) {
    need(hashes[name] === change.after);

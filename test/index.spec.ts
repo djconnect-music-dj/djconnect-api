@@ -6,6 +6,9 @@ import { assertCompleteTranslations, MESSAGES, SUPPORTED_LANGUAGES } from "../sr
 import erasureMigration from "../migrations/0013_push_registration_erasure.sql?raw";
 import { purgePushDeliveryDiagnostics } from "../src/repositories/auditEvents";
 
+import { isAlertRecipientCurrent } from "../src/services/pushDelivery";
+import type { Registration } from "../src/types";
+
 const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 const EXAMPLE_RELAY_SECRET = "example-relay-secret";
 const EXAMPLE_PAIRING_ISSUER_SECRET = "example-pairing-issuer-secret";
@@ -606,6 +609,75 @@ describe("DJConnect API worker", () => {
 		const payload = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as { aps: { alert: { title: string; body: string } } };
 		expect(payload.aps.alert).toEqual({ title: "Ask DJ", body: "Ask DJ attend votre choix." });
 		expect(JSON.stringify(payload)).toContain("Ask DJ attend votre choix.");
+	});
+
+	it("targets the original Ask DJ device and rejects an incomplete recipient scope", async () => {
+		const authorization = await issueInstallAuth("example-ha-install");
+		const requestedDevice = "djconnect-ios-ABCDEFGHIJKL";
+		const owner = "a".repeat(64);
+		await registerDevice(authorization, { device_id: requestedDevice, ha_user_hash: owner, apns_token: "example-requester-apns" });
+		await registerDevice(authorization, { device_id: "djconnect-ios-ABCDEFGHIJKM", ha_user_hash: owner, apns_token: "example-other-apns" });
+		await registerDevice(authorization, { device_id: "djconnect-ios-ABCDEFGHIJKN", ha_user_hash: "b".repeat(64), apns_token: "example-unrelated-apns" });
+		const provider = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+		const input = {
+			ha_install_id: "example-ha-install", ha_user_hash: owner, client_types: ["ios"],
+			target_device_id: requestedDevice, event_type: "ask_dj_device_confirm", history_revision: 12,
+		};
+		for (const invalid of [{ ha_user_hash: undefined }, { target_device_id: undefined }, { client_types: ["macos"] }]) {
+			expect((await dispatch("/v1/push/event", { ...input, ...invalid }, authorization)).status).toBe(400);
+		}
+		expect((await dispatch("/v1/push/event", { ...input, event_type: "ask_dj_confirm" }, authorization)).status).toBe(400);
+		expect(provider).not.toHaveBeenCalled();
+		const response = await dispatch("/v1/push/event", input, authorization);
+		expect(await response.json()).toMatchObject({ matched: 1, delivered: 1 });
+		expect(provider).toHaveBeenCalledOnce();
+		expect(String(provider.mock.calls[0]?.[0])).toContain("example-requester-apns");
+		const payload = JSON.parse(String(provider.mock.calls[0]?.[1]?.body));
+		expect(payload).toMatchObject({ event_type: "ask_dj_confirm", history_revision: "12" });
+		expect(payload).not.toHaveProperty("target_device_id");
+		await registerDevice(authorization, { device_id: requestedDevice, ha_user_hash: owner, apns_token: "example-rotated-apns" });
+		const ambiguous = await dispatch("/v1/push/event", input, authorization);
+		expect(await ambiguous.json()).toMatchObject({ matched: 0, delivered: 0 });
+		expect(provider).toHaveBeenCalledOnce();
+	});
+
+	it("does not deliver Ask DJ alerts to Moment-only or explicitly disabled app registrations", async () => {
+		const authorization = await issueInstallAuth("example-ha-install");
+		await registerDevice(authorization, {
+			device_id: "example-moments-only",
+			apns_token: "example-moments-only-token",
+			categories: ["dj_moments_v1"],
+		});
+		await registerDevice(authorization, {
+			device_id: "example-disabled-alerts",
+			apns_token: "example-disabled-alerts-token",
+			categories: [],
+		});
+		await registerDevice(authorization, {
+			device_id: "example-ask-dj-only",
+			apns_token: "example-ask-dj-only-token",
+			categories: ["ask_dj"],
+		});
+		const provider = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+		const result = await dispatch("/v1/push/event", {
+			ha_install_id: "example-ha-install",
+			event_type: "ask_dj_response",
+		}, authorization);
+		expect(result.status).toBe(200);
+		expect(await result.json()).toMatchObject({ matched: 1, delivered: 1 });
+		expect(provider).toHaveBeenCalledOnce();
+		expect(String(provider.mock.calls[0]?.[0])).toContain("example-ask-dj-only-token");
+	});
+
+	it("invalidates the in-flight recipient when its consent changes without token rotation", async () => {
+		const authorization = await issueInstallAuth("example-ha-install");
+		await registerDevice(authorization);
+		const original = await env.DB.prepare("SELECT * FROM registrations").first<Registration>();
+		expect(original).not.toBeNull();
+		expect(await isAlertRecipientCurrent(env.DB, original!)).toBe(true);
+		await env.DB.prepare("UPDATE registrations SET categories_json=? WHERE id=?")
+			.bind('["dj_moments_v1"]', original!.id).run();
+		expect(await isAlertRecipientCurrent(env.DB, original!)).toBe(false);
 	});
 
 	it("rejects push event payloads with raw prompt, response, history, memory or token fields", async () => {
