@@ -1871,6 +1871,38 @@ def supported_builds_delta():
     return delta
 
 
+APPLE_PUSH_ROUTING_PATH = 'docs/rendezvous/apple-push-routing-source-delta-v1.json'
+APPLE_PUSH_ROUTING_PIN = '6a503fe0936a659429ba77944bf24aef939ba267a1048421af50ef3ded700c77'
+APPLE_PUSH_ROUTING_MAP = '9f70796cf93b47f68226d0afc1ef7e60b11e68448ffe286ed4621683e4ad7047'
+APPLE_PUSH_ROUTING_FILES = frozenset(('src/handlers/push.ts', 'src/services/pushDelivery.ts'))
+APPLE_PUSH_ROUTING_REFERENCE = 'src/surface-push/rich-activity-fragments.ts'
+SOURCE_PROVENANCE.update(apple_push_routing_delta_sha256=APPLE_PUSH_ROUTING_PIN,
+                         apple_push_routing_source_map_sha256=APPLE_PUSH_ROUTING_MAP)
+
+
+def apple_push_routing_delta():
+    delta = pinned_working_proof(APPLE_PUSH_ROUTING_PATH, APPLE_PUSH_ROUTING_PIN)
+    require(type(delta['schema_version']) is int and delta['schema_version'] == 1
+            and delta['scope'] == 'APPLE_PUSH_ROUTING_SOURCE_ONLY'
+            and delta['production_effect_authorized'] is False
+            and delta['baseline_source_map_sha256'] == SUPPORTED_BUILDS_SOURCE_MAP
+            and delta['effective_source_map_sha256'] == APPLE_PUSH_ROUTING_MAP
+            and set(delta['changes']) == APPLE_PUSH_ROUTING_FILES
+            and set(delta['reference_additions']) == {APPLE_PUSH_ROUTING_REFERENCE})
+    return delta
+
+
+def apple_push_routing_previous_bytes(name, raw):
+    if name not in APPLE_PUSH_ROUTING_FILES:
+        return raw
+    import base64
+    change = apple_push_routing_delta()['changes'][name]
+    previous = base64.b64decode(change['previous_bytes_b64'], validate=True)
+    require(digest(raw) == change['after'] and digest(previous) == change['before']
+            and change['after'] != change['before'])
+    return previous
+
+
 def supported_builds_previous_bytes(name, raw):
     if name not in SUPPORTED_BUILDS_FILES and name != SUPPORTED_BUILDS_REFERENCE:
         return raw
@@ -1884,7 +1916,7 @@ def supported_builds_previous_bytes(name, raw):
 
 
 def wrangler_4164_previous_bytes(name):
-    raw = supported_builds_previous_bytes(name, safe_path(name).read_bytes())
+    raw = supported_builds_previous_bytes(name, apple_push_routing_previous_bytes(name, safe_path(name).read_bytes()))
     if name not in WRANGLER_4160_SOURCES | WRANGLER_4164_REFERENCES:
         return raw
     delta = wrangler_4164_delta()
@@ -1934,6 +1966,14 @@ def baseline():
             target[name] = change['after']
     require(source_map_digest(sources) == SUPPORTED_BUILDS_SOURCE_MAP)
     refs[SUPPORTED_BUILDS_DELTA_PATH] = SUPPORTED_BUILDS_DELTA_PIN
+    push = apple_push_routing_delta()
+    for name, change in push['changes'].items():
+        require(sources[name] == change['before'] == digest(apple_push_routing_previous_bytes(name, safe_path(name).read_bytes())))
+        sources[name] = change['after']
+    require(source_map_digest(sources) == APPLE_PUSH_ROUTING_MAP)
+    require(APPLE_PUSH_ROUTING_REFERENCE not in refs and APPLE_PUSH_ROUTING_REFERENCE not in sources)
+    refs.update(push['reference_additions'])
+    refs[APPLE_PUSH_ROUTING_PATH] = APPLE_PUSH_ROUTING_PIN
     return sources, refs
 
 

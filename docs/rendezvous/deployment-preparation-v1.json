@@ -151,7 +151,9 @@
     "docs/rendezvous/wrangler-4164-toolchain-source-delta-v1.json": "097e0869b700c8ee85967bbbe452c305bb0e036755b8430f1afae38d4ea66ef8",
     "qualification/rendezvous/compatible-runtime-dependency-provenance-v7.json": "da360a3235824c2eb5daba56ff46be0627e85645a4714ce3dd34ff9c06ddd0f1",
     "qualification/rendezvous/compatible-runtime-dependency-provenance-v8.json": "6ad440523b8094a271fe6e7cdc3cb34270a4da8f0d9cd5c2f724cfdd0d3be2b2",
-    "docs/rendezvous/native-ios-supported-builds-source-delta-v1.json": "339f2a15b852309d6ca9d255f911908f79662e17584dbcc6ffd4afa3ea4ff4dc"
+    "docs/rendezvous/native-ios-supported-builds-source-delta-v1.json": "339f2a15b852309d6ca9d255f911908f79662e17584dbcc6ffd4afa3ea4ff4dc",
+    "src/surface-push/rich-activity-fragments.ts": "568373d6fc4ce6a8714b0b7ff4001be1466b661b44fe1911366114dd3550d946",
+    "docs/rendezvous/apple-push-routing-source-delta-v1.json": "6a503fe0936a659429ba77944bf24aef939ba267a1048421af50ef3ded700c77"
   },
   "schema_version": 1,
   "secret_names": [
@@ -264,8 +266,8 @@
     "src/handlers/admin.ts": "713ec573444a1d94120a4d7eb20ed1c7c85d6ca087f7d71cff7f35041b36abc4",
     "src/handlers/install.ts": "cb3aba1d0209b08f4ec44b3619890de0fd614309a2e4033e685a57f58d263cc7",
     "src/apns.ts": "8a6d3c3fa5400dc16b8b81e95e4536b2e2acdfe75829061c61741d791ae45948",
-    "src/services/pushDelivery.ts": "e7126dfcc73778bdf3964402659a894af313aafc8a88b0c9c92f7e9728592a63",
-    "src/handlers/push.ts": "2129513a9c3e3c2d1075ad786370bdbbe655bdfcd0d33e4a6c16d2095dd726fd",
+    "src/services/pushDelivery.ts": "d1fd6667cd6d43f87218b42a944da0dc292b15453095104fab95304a282e31a6",
+    "src/handlers/push.ts": "013754f4f0a94cc7cbddaca0832cb1a52262042d0d375b73124ebd44a8fe324a",
     "src/releaseMetadata.ts": "803c64b994c895b93b6b34a78b5c81cdc82bf90e9a8c689c05ea07b2e047a416",
     "qualification/rendezvous/compatible-runtime-dependency-provenance-v3.json": "c709f629e3615600977c2c0b088e07121d3e1d9b7f6c383d6bbb512810ee5541",
     "src/surface-push/apns.ts": "fa760bb5c1e1dde207cfae3da29d08832dc3537d60c918370530469f53d24f29",
@@ -399,7 +401,9 @@
     "wrangler_4164_delta_sha256": "097e0869b700c8ee85967bbbe452c305bb0e036755b8430f1afae38d4ea66ef8",
     "wrangler_4164_source_map_sha256": "cc1552857429152223ba313e6563a4f120adb31de5041677855059d597a6cfd4",
     "native_ios_supported_builds_delta_sha256": "339f2a15b852309d6ca9d255f911908f79662e17584dbcc6ffd4afa3ea4ff4dc",
-    "native_ios_supported_builds_source_map_sha256": "3d7f0b99a98034b082a54edf955b88c236615699850b62e8ab19f8e71edca97f"
+    "native_ios_supported_builds_source_map_sha256": "3d7f0b99a98034b082a54edf955b88c236615699850b62e8ab19f8e71edca97f",
+    "apple_push_routing_delta_sha256": "6a503fe0936a659429ba77944bf24aef939ba267a1048421af50ef3ded700c77",
+    "apple_push_routing_source_map_sha256": "9f70796cf93b47f68226d0afc1ef7e60b11e68448ffe286ed4621683e4ad7047"
   },
   "status": "NOT_AUTHORIZED",
   "supplying_source_sha": "896ccdc69447c231d04da3a6af4f27ea1f763697",
