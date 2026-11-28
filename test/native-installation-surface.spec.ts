@@ -352,9 +352,10 @@ it("ON/OFF/ON uses one real saved-key signature and counter CAS for a separate r
  expect((await service(post("/v1/push/surface/event",{...coordinate(value),event:"widget_reload"},bearer))).status).toBe(200);
  expect(fetcher).toHaveBeenCalledTimes(1);
 });
-it("renews a Widget role under the same device consent and withdrawal closes both roles",async()=>{
+it("a future signed build renews the Widget role under the same device consent and withdrawal closes both roles",async()=>{
  const x=await reauthorizationPrepared(true);
- const response=await x.handler(post(reauthorizationPrefix+"register",await x.assertion(),credential.token));
+ const proof=await x.assertion(1,x.challenge,x.next,"51002");
+ const response=await x.handler(post(reauthorizationPrefix+"register",proof,credential.token));
  expect(response.status).toBe(200);
  expect(await db.prepare("SELECT consent_revision FROM native_installation_surface_bindings ORDER BY consent_revision").all())
   .toMatchObject({results:[{consent_revision:1},{consent_revision:1}]});
