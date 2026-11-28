@@ -20,11 +20,11 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.23.0",
-    "@types/node": "^26.6.6",
+    "@types/node": "^26.6.7",
     "@vitest/coverage-istanbul": "~4.1.12",
     "typescript": "^7.0.2",
     "vitest": "~4.1.12",
-    "wrangler": "^4.164.0"
+    "wrangler": "^4.168.0"
   },
   "overrides": {
     "sharp": "0.35.5",
@@ -41,7 +41,7 @@
     "fsevents": false
   },
   "dependencies": {
-    "asn1js": "4.0.0",
+    "asn1js": "4.1.0",
     "cbor": "10.0.12",
     "pkijs": "4.0.1"
   }
