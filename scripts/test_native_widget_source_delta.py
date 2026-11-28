@@ -83,6 +83,7 @@ class NativeWidgetSourceDeltaTests(unittest.TestCase):
         self.assertEqual(len(delta['additions']), 1)
         for name, change in {**delta['changes'], **delta['reference_changes']}.items():
             raw = (v.ROOT / name).read_bytes()
+            raw = v.widget_admission_previous_bytes(name, raw)
             self.assertEqual(v.digest(v.unique_previous_bytes(name, raw)), change['before'])
             with self.assertRaises(ValueError):
                 v.unique_previous_bytes(name, raw + b'\n')

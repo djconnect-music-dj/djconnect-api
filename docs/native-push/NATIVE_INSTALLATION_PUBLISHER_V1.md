@@ -238,8 +238,11 @@ over canonical JSON `["djc-installation-widget-reauthorization/1", "POST",
 first_key_receipt, publication_operation_id, delegation]`. The real original
 Core key, exact original native ACK and a newly current original publication
 with the same original pair/key context and current unwithdrawn consent revision
-are required. Reauthorization after opt-out requires a strictly newer actual
-consent revision. Existing immutable delegation IDs/once-issuance rules remain.
+are required. A device with an admitted role can renew under the same consent
+revision while it is still unwithdrawn. Renewal uses a new publication and a
+fresh assertion over a distinct, bounded delegation. Reauthorization after
+opt-out requires a strictly newer actual consent revision. Existing immutable
+delegation IDs and once-issuance rules still apply.
 
 The server returns one fresh, once-only 32-byte nonce with a 120-second maximum
 challenge deadline, bounded further by original current publication, selected
@@ -326,7 +329,13 @@ get-task-allow true. The [bounded static evidence](signed-ios-40533-policy-evide
 retains the exact signed manifest digest and actual app/Widget executable hashes.
 Strict deep codesign and real entitlement readback are static artifact evidence.
 
-Expiry remains 2026-12-23T10:00:00Z. Category 3/AwAAAA== is the retained explicit
+This selection originally expired on 2026-12-23T10:00:00Z. The installation
+route now admits this same Apple signing identity with the 40533 minimum build
+without a shared calendar cutoff. The original proof, signed Apple status,
+publication, challenge and delegation keep their independent expiry and consent
+checks. Historical artifacts retain the original policy evidence.
+
+Category 3/AwAAAA== is the retained explicit
 SERVER POLICY EXPECTATION, never inferred from codesign and not an actual Apple
 proof claim. The genuine verifier/current signed status must prove all selected
 properties. Record, production first-key entry and exact low-level policy-id

@@ -5,12 +5,12 @@ import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {repo,validateNativeWidgetLayer,nativeWidgetPrevious,nativeCounterPrevious,validateNativeCounterLayer,nativeAckPrevious,validateNativeAckLayer,nativeUniquePrevious,validateNativeUniqueLayer,nativePolicy40533Previous,validateNativePolicy40533Layer} from './local-native-runtime.mjs';
-import {validateWrangler4164Layer,wrangler4164Previous,supportedBuildsPrevious} from './local-native-runtime.mjs';
+import {validateWrangler4164Layer,wrangler4164Previous,supportedBuildsPrevious,widgetAdmissionPrevious} from './local-native-runtime.mjs';
 const hash=raw=>createHash('sha256').update(raw).digest('hex');
 const path='docs/rendezvous/installation-native-widget-source-delta-v1.json';
 const toolchain=validateWrangler4164Layer(await readFile(join(repo,'docs/rendezvous/wrangler-4164-toolchain-source-delta-v1.json')));
 async function beforeToolchain(name){
- return wrangler4164Previous(name,await supportedBuildsPrevious(name,await readFile(join(repo,name))),toolchain);
+ return wrangler4164Previous(name,await supportedBuildsPrevious(name,await widgetAdmissionPrevious(name,await readFile(join(repo,name)))),toolchain);
 }
 test('native Widget source delta preserves exact original bytes, checks every actual replacement and rejects delta tampering',async()=>{
  const raw=await readFile(join(repo,path)),d=validateNativeWidgetLayer(raw);
@@ -50,7 +50,7 @@ test('unique Apple identity successor rejects changed writer, schema, contract a
  assert.equal(Object.keys(d.changes).length,1);assert.equal(Object.keys(d.additions).length,1);
  assert.throws(()=>validateNativeUniqueLayer(Buffer.concat([raw,Buffer.from('\n')])));
  for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
-  const current=await readFile(join(repo,name));assert.equal(hash(await nativeUniquePrevious(name,current)),c.before);
+  const current=await beforeToolchain(name);assert.equal(hash(await nativeUniquePrevious(name,current)),c.before);
   await assert.rejects(nativeUniquePrevious(name,Buffer.concat([current,Buffer.from('\n')])));
  }
  for(const[name,pin]of Object.entries(d.additions))assert.equal(hash(await readFile(join(repo,name))),pin);

@@ -9,7 +9,7 @@ import { SurfaceError } from "../surface-push/wire";
 
 interface SelectedApplePolicy {
  readonly id: string;
- readonly expiresAt: number;
+ readonly expiresAt: number | null;
  readonly apple: Readonly<NativeAppleEvidencePolicy>;
 }
 interface Original extends FirstKeyPairBinding { operation_id: string }
@@ -45,10 +45,10 @@ export function createInstallationFirstKey(db: D1Database, origin: string, curre
    if (!selected || selected.id !== installationNativePolicy.id ||
        selected.expiresAt !== installationNativePolicy.expiresAt ||
        canonical(selected.apple) !== canonical(installationNativePolicy.apple) ||
-       !Number.isSafeInteger(selected.expiresAt) || Date.now() >= selected.expiresAt || !current())
+       !current())
     throw new SurfaceError(503, "native_first_key_policy_unavailable");
    const credential = await authenticateInstallation(request, db, current);
-   const live = () => current() && Date.now() < selected.expiresAt && !request.signal.aborted;
+   const live = () => current() && !request.signal.aborted;
    const query = (original: Original, retirementDeadline?: number) => ({
     sql: `EXISTS (SELECT 1 FROM native_installation_pair_publications p
       JOIN install_tokens i ON i.id=p.credential_id
@@ -61,11 +61,11 @@ export function createInstallationFirstKey(db: D1Database, origin: string, curre
        AND w.through_revision>=p.consent_revision)
       AND NOT EXISTS (SELECT 1 FROM native_installation_key_retirements r
        WHERE r.credential_id=p.credential_id AND r.pair_binding=p.pair_binding)` : "AND p.request_expires_at_ms=?"}
-      ) AND ? > ${nowSQL}`,
+      )`,
     values: [credential.id, credential.token_hash, credential.ha_install_id,
      original.operation_id, original.pairing_generation, original.pair_binding,
      original.owner_binding, original.device_binding, original.core_key_thumbprint,
-     ...(retirementDeadline === undefined ? [] : [retirementDeadline]), selected.expiresAt],
+     ...(retirementDeadline === undefined ? [] : [retirementDeadline])],
    });
    const policy: WidgetFirstKeyPolicy = {
     id: selected.id, expiresAt: selected.expiresAt, isCurrent: live,

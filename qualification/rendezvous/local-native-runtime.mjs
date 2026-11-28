@@ -219,9 +219,29 @@ export async function supportedBuildsPrevious(name, raw) {
  return previous;
 }
 
+const widgetAdmissionPath = "docs/rendezvous/native-widget-continuous-admission-source-delta-v1.json";
+const widgetAdmissionPin = "db0b03fa5ddb43d796cae00672683d8e48430acd250b27fbf96e23132f4b2c54";
+async function widgetAdmissionLayer() {
+ const raw=await readFile(join(repo,widgetAdmissionPath));
+ need(sha(raw)===widgetAdmissionPin);
+ const layer=JSON.parse(raw);
+ need(layer.schema_version===1 && layer.scope==="NATIVE_WIDGET_CONTINUOUS_ADMISSION_SOURCE_ONLY" &&
+      layer.base_source==="a2683b003a0617bea9bd11091dc04afc6439344c" && layer.production_effect_authorized===false);
+ return layer;
+}
+
+export async function widgetAdmissionPrevious(name,raw) {
+ const layer=await widgetAdmissionLayer();
+ const change=layer.changes[name] ?? layer.reference_changes[name];
+ if (!change) return raw;
+ const previous=Buffer.from(change.previous_bytes_b64,"base64");
+ need(sha(raw)===change.after && sha(previous)===change.before && change.before!==change.after);
+ return previous;
+}
+
 async function historicalRead(path,delta,encoding){
  const name=resolve(path).slice(repo.length+1);
- const raw=await nativeWidgetPrevious(name,wrangler4164Previous(name,await supportedBuildsPrevious(name,await readFile(path)),delta));
+ const raw=await nativeWidgetPrevious(name,wrangler4164Previous(name,await supportedBuildsPrevious(name,await widgetAdmissionPrevious(name,await readFile(path))),delta));
  return encoding?raw.toString(encoding):raw;
 }
 export async function sourceSnapshot(){
@@ -234,6 +254,20 @@ export async function sourceSnapshot(){
  need(publishedPlan.reference_hashes[wrangler4164Path]===wrangler4164Pin&&
   publishedPlan.reference_hashes[wrangler4164Provenance]===wrangler4164.reference_additions[wrangler4164Provenance]);
  const plan={...publishedPlan,source_hashes:{...publishedPlan.source_hashes},reference_hashes:{...publishedPlan.reference_hashes}};
+ const widget=await widgetAdmissionLayer();
+ need(plan.reference_hashes[widgetAdmissionPath]===widgetAdmissionPin &&
+      plan.source_provenance.native_widget_continuous_admission_delta_sha256===widgetAdmissionPin &&
+      plan.source_provenance.native_widget_continuous_admission_source_map_sha256===widget.effective_source_map_sha256 &&
+      mapHash(plan.source_hashes)===widget.effective_source_map_sha256);
+ for (const [hashes,changes] of [[plan.source_hashes,widget.changes],[plan.reference_hashes,widget.reference_changes]]) {
+  for (const [name,change] of Object.entries(changes)) {
+   need(hashes[name]===change.after);
+   await widgetAdmissionPrevious(name,await readFile(join(repo,name)));
+   hashes[name]=change.before;
+  }
+ }
+ delete plan.reference_hashes[widgetAdmissionPath];
+ need(mapHash(plan.source_hashes)===widget.baseline_source_map_sha256);
  const push = await applePushRoutingLayer();
  need(plan.reference_hashes[applePushRoutingPath] === applePushRoutingPin &&
       publishedPlan.source_provenance.apple_push_routing_delta_sha256 === applePushRoutingPin &&
@@ -258,7 +292,7 @@ export async function sourceSnapshot(){
  for (const [hashes, changes] of [[plan.source_hashes, supported.changes], [plan.reference_hashes, supported.reference_changes]]) {
   for (const [name, change] of Object.entries(changes)) {
    need(hashes[name] === change.after);
-   await supportedBuildsPrevious(name, await readFile(join(repo, name)));
+   await supportedBuildsPrevious(name, await widgetAdmissionPrevious(name, await readFile(join(repo, name))));
    hashes[name] = change.before;
   }
  }

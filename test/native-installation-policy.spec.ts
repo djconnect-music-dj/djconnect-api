@@ -1,6 +1,6 @@
 /** Actual selected configuration/HTTP guard, not Apple proof acceptance. */
 import {env} from "cloudflare:test";
-import {expect,it} from "vitest";
+import {expect,it,vi} from "vitest";
 import evidence from "../docs/native-push/signed-ios-40533-policy-evidence.json";
 import {installationNativePolicy} from "../src/native-push/installation-policy";
 import {createInstallationFirstKey} from "../src/native-push/installation-first-key";
@@ -11,7 +11,7 @@ const request=()=>new Request(origin+"/v1/push/native/key/challenge",{method:"PO
  headers:{"content-type":"application/json"},body:"{}"});
 it("retains the qualified 40533 baseline while accepting newer Apple-signed builds",()=>{
  expect(installationNativePolicy).toEqual({id:"ios-native-push-development-40533/1",
-  expiresAt:Date.parse("2026-12-23T10:00:00Z"),apple:{profile:"host_wake_apple_properties_attestation_v2",
+  expiresAt:null,apple:{profile:"host_wake_apple_properties_attestation_v2",
    app_identifier:"ZEML4LPXH4.dev.djconnect.ios",app_attest_environment:"development",minimum_bundle_version:"40533",
    launch_validation_category_b64:"AwAAAA=="}});
  expect(evidence.application.build).toBe("40533");expect(evidence.apple_source).toBe("60fd1157207dfb0f8cc7fe5fbf3acfd26fd3ef58");
@@ -22,6 +22,14 @@ it("retains the qualified 40533 baseline while accepting newer Apple-signed buil
 });
 it("selected configuration still requires original installation authentication before any native decision",async()=>{
  expect((await createInstallationFirstKey(env.DB,origin,()=>true,installationNativePolicy)(request())).status).toBe(401);
+});
+it("still reaches the installation authentication gate after the former policy cutoff",async()=>{
+ const clock=vi.spyOn(Date,"now").mockReturnValue(Date.parse("2026-12-24T10:00:00Z"));
+ try {
+  expect((await createInstallationFirstKey(env.DB,origin,()=>true,installationNativePolicy)(request())).status).toBe(401);
+ } finally {
+  clock.mockRestore();
+ }
 });
 const variants=[
  {name:"old40532 policy ID",id:"ios-native-push-development-40532/1"},
