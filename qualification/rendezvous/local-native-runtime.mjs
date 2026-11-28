@@ -230,7 +230,7 @@ async function widgetAdmissionLayer() {
  return layer;
 }
 
-async function widgetAdmissionPrevious(name,raw) {
+export async function widgetAdmissionPrevious(name,raw) {
  const layer=await widgetAdmissionLayer();
  const change=layer.changes[name] ?? layer.reference_changes[name];
  if (!change) return raw;
