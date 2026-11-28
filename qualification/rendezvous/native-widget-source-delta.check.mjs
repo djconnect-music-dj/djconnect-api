@@ -50,7 +50,7 @@ test('unique Apple identity successor rejects changed writer, schema, contract a
  assert.equal(Object.keys(d.changes).length,1);assert.equal(Object.keys(d.additions).length,1);
  assert.throws(()=>validateNativeUniqueLayer(Buffer.concat([raw,Buffer.from('\n')])));
  for(const[name,c]of Object.entries({...d.changes,...d.reference_changes})){
-  const current=await readFile(join(repo,name));assert.equal(hash(await nativeUniquePrevious(name,current)),c.before);
+  const current=await beforeToolchain(name);assert.equal(hash(await nativeUniquePrevious(name,current)),c.before);
   await assert.rejects(nativeUniquePrevious(name,Buffer.concat([current,Buffer.from('\n')])));
  }
  for(const[name,pin]of Object.entries(d.additions))assert.equal(hash(await readFile(join(repo,name))),pin);
