@@ -1892,6 +1892,41 @@ def apple_push_routing_delta():
     return delta
 
 
+WIDGET_ADMISSION_PATH = 'docs/rendezvous/native-widget-continuous-admission-source-delta-v1.json'
+WIDGET_ADMISSION_PIN = 'db0b03fa5ddb43d796cae00672683d8e48430acd250b27fbf96e23132f4b2c54'
+WIDGET_ADMISSION_MAP = '32aa0091d6486a32aca1a089a500769dad49e1c56aa00e8a4bcc35af0dbf80fe'
+WIDGET_ADMISSION_SOURCES = frozenset(('src/native-push/first-key-service.ts', 'src/native-push/installation-first-key.ts', 'src/native-push/installation-policy.ts', 'src/native-push/installation-reauthorization.ts', 'src/native-push/installation-surface-enrol.ts'))
+WIDGET_ADMISSION_REFERENCES = frozenset(('docs/native-push/NATIVE_INSTALLATION_PUBLISHER_V1.md',))
+SOURCE_PROVENANCE.update(native_widget_continuous_admission_delta_sha256=WIDGET_ADMISSION_PIN,
+                         native_widget_continuous_admission_source_map_sha256=WIDGET_ADMISSION_MAP)
+
+
+def widget_admission_delta():
+    delta = pinned_working_proof(WIDGET_ADMISSION_PATH, WIDGET_ADMISSION_PIN)
+    require(type(delta['schema_version']) is int and delta['schema_version'] == 1
+            and delta['scope'] == 'NATIVE_WIDGET_CONTINUOUS_ADMISSION_SOURCE_ONLY'
+            and delta['base_source'] == 'a2683b003a0617bea9bd11091dc04afc6439344c'
+            and delta['production_effect_authorized'] is False
+            and delta['baseline_source_map_sha256'] == APPLE_PUSH_ROUTING_MAP
+            and delta['effective_source_map_sha256'] == WIDGET_ADMISSION_MAP
+            and set(delta['changes']) == WIDGET_ADMISSION_SOURCES
+            and set(delta['reference_changes']) == WIDGET_ADMISSION_REFERENCES)
+    return delta
+
+
+def widget_admission_previous_bytes(name, raw):
+    if name not in WIDGET_ADMISSION_SOURCES | WIDGET_ADMISSION_REFERENCES:
+        return raw
+    import base64
+    delta = widget_admission_delta()
+    change = delta['changes'].get(name) or delta['reference_changes'][name]
+    previous = base64.b64decode(change['previous_bytes_b64'], validate=True)
+    require(set(change) == {'before', 'after', 'previous_bytes_b64'}
+            and digest(raw) == change['after'] and digest(previous) == change['before']
+            and change['before'] != change['after'])
+    return previous
+
+
 def apple_push_routing_previous_bytes(name, raw):
     if name not in APPLE_PUSH_ROUTING_FILES:
         return raw
@@ -1916,7 +1951,8 @@ def supported_builds_previous_bytes(name, raw):
 
 
 def wrangler_4164_previous_bytes(name):
-    raw = supported_builds_previous_bytes(name, apple_push_routing_previous_bytes(name, safe_path(name).read_bytes()))
+    raw = supported_builds_previous_bytes(name, apple_push_routing_previous_bytes(
+        name, widget_admission_previous_bytes(name, safe_path(name).read_bytes())))
     if name not in WRANGLER_4160_SOURCES | WRANGLER_4164_REFERENCES:
         return raw
     delta = wrangler_4164_delta()
@@ -1974,6 +2010,14 @@ def baseline():
     require(APPLE_PUSH_ROUTING_REFERENCE not in refs and APPLE_PUSH_ROUTING_REFERENCE not in sources)
     refs.update(push['reference_additions'])
     refs[APPLE_PUSH_ROUTING_PATH] = APPLE_PUSH_ROUTING_PIN
+    widget = widget_admission_delta()
+    for hashes, changes in ((sources, widget['changes']), (refs, widget['reference_changes'])):
+        for name, change in changes.items():
+            require(hashes[name] == change['before']
+                    == digest(widget_admission_previous_bytes(name, safe_path(name).read_bytes())))
+            hashes[name] = change['after']
+    require(source_map_digest(sources) == WIDGET_ADMISSION_MAP)
+    refs[WIDGET_ADMISSION_PATH] = WIDGET_ADMISSION_PIN
     return sources, refs
 
 

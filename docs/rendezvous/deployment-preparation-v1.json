@@ -141,7 +141,7 @@
     "docs/rendezvous/api-4-1-manifest-refresh-delta-v1.json": "339f9911e7dcd8a7a5d6aaca6edba4dd574261318faf24647aa228429b40f760",
     "docs/rendezvous/api-org-core-authority-source-delta-v1.json": "a4a87feb002f94f8a8db3afe3414372ea51ae11b04dd7167f0f832d4c1967de1",
     "docs/rendezvous/api-canonical-workflow-pin-reset-v1.json": "56fde11218670c5e22d23e9fe43eac373cec36e80501eafb563cf668f8369c8e",
-    "docs/native-push/NATIVE_INSTALLATION_PUBLISHER_V1.md": "f5c3144f114986f41f88f501b0d251184d6ca8a260a654096abc3e8eefd7ee01",
+    "docs/native-push/NATIVE_INSTALLATION_PUBLISHER_V1.md": "81925400f3f6ee28cdb6a9253e0bd117fc60b2c8a6769a3cb853636a2501809b",
     "docs/rendezvous/installation-native-widget-source-delta-v1.json": "6b3ffda494c1eb530919793555861437bb9d0030330f932803f31349eab79c42",
     "docs/rendezvous/native-widget-counter-integrity-source-delta-v1.json": "b05b708ea760dedf25c56ed008f2e7d9ac6d7844b7924d3ce902266b30234fb2",
     "docs/rendezvous/native-ack-key-bounds-source-delta-v1.json": "68ced5635e8010c94203c09711b3ab16f6cac15e6dea4c6ed07518f17a669ea5",
@@ -153,7 +153,8 @@
     "qualification/rendezvous/compatible-runtime-dependency-provenance-v8.json": "6ad440523b8094a271fe6e7cdc3cb34270a4da8f0d9cd5c2f724cfdd0d3be2b2",
     "docs/rendezvous/native-ios-supported-builds-source-delta-v1.json": "339f2a15b852309d6ca9d255f911908f79662e17584dbcc6ffd4afa3ea4ff4dc",
     "src/surface-push/rich-activity-fragments.ts": "568373d6fc4ce6a8714b0b7ff4001be1466b661b44fe1911366114dd3550d946",
-    "docs/rendezvous/apple-push-routing-source-delta-v1.json": "6a503fe0936a659429ba77944bf24aef939ba267a1048421af50ef3ded700c77"
+    "docs/rendezvous/apple-push-routing-source-delta-v1.json": "6a503fe0936a659429ba77944bf24aef939ba267a1048421af50ef3ded700c77",
+    "docs/rendezvous/native-widget-continuous-admission-source-delta-v1.json": "db0b03fa5ddb43d796cae00672683d8e48430acd250b27fbf96e23132f4b2c54"
   },
   "schema_version": 1,
   "secret_names": [
@@ -317,15 +318,15 @@
     "migrations/0016_native_installation_apple_key.sql": "58424fc807c75c7e91c41abb68e2cf5331c6e4b650c615474861d2eaa75dac5b",
     "migrations/0017_native_installation_role_challenges.sql": "9cba75a3c56b6d8d65c75f76315ca478651b10f43bffb95c1a42a449a48f439a",
     "src/native-push/first-key-apple.ts": "9d46a650c402e262cf30636a1285031bb3515badbdb48921447e3a6f497bcad0",
-    "src/native-push/first-key-service.ts": "738520564ea2a648d600b3a318bedd75d0dfa60428edf3091cf0834355966364",
+    "src/native-push/first-key-service.ts": "67639ff3927f3f8ec37bf13168030a2c3c94826c90d3773d3a64ed8527f28545",
     "src/native-push/first-key-wire.ts": "0f730351413a2623a61cdfa0225bbb7bd7a7a78fc37b9e0a73d0c2326b759620",
     "src/native-push/installation-dispatch.ts": "f51b3c1acf53530053e611ebeea10778f048c5c62144a0d12e252f722d0769e7",
-    "src/native-push/installation-first-key.ts": "fc6846ecca9dc4f6501fd110a60876c7f90104a1114306757db63dca0554d386",
-    "src/native-push/installation-policy.ts": "7e1a812eec8eb9ea916fdaa77e51558b4e1fcb0e74fc4dc6206484c02b1b7c53",
+    "src/native-push/installation-first-key.ts": "258611a12d7313f0d9d9d291760acb48ef8bc63037064aedd5e8f4035801b156",
+    "src/native-push/installation-policy.ts": "287adb9540d6911f32eeee5e15543530ad523d88dde56af0add55d083a9729e5",
     "src/native-push/installation-publisher.ts": "1ba6d1f0c14e2145abb32de473c45ec10a69e31ad80bc35eb092bc91f551e104",
-    "src/native-push/installation-reauthorization.ts": "843e1ee654cb59cc9bb60adb2b17f2a7cb1ca275097bebd95f4542a99c533f44",
+    "src/native-push/installation-reauthorization.ts": "43175de14434b1d2a6ead93d4acd4802c91efa894075c7c2e5aae1285871ff5d",
     "src/native-push/installation-surface-dispatch.ts": "ccb63b0eb048b06b1a7ac4241a01683b58fa2a57a5bd184dbab8d4ef64b4b0ce",
-    "src/native-push/installation-surface-enrol.ts": "e1e3cd83784380db9f661ef7d06a4b7044a18438ec312bce84813e332353dc93",
+    "src/native-push/installation-surface-enrol.ts": "e2e614221d0766dbc8ed2be283d9240b9ff97294f9f375f78b0ca559709983a7",
     "migrations/0018_native_installation_unique_apple_identity.sql": "09d58084362f9697c91ac362273c99ccd336c4a04f9afc0ce4c8d8f2d833427d"
   },
   "source_provenance": {
@@ -403,7 +404,9 @@
     "native_ios_supported_builds_delta_sha256": "339f2a15b852309d6ca9d255f911908f79662e17584dbcc6ffd4afa3ea4ff4dc",
     "native_ios_supported_builds_source_map_sha256": "3d7f0b99a98034b082a54edf955b88c236615699850b62e8ab19f8e71edca97f",
     "apple_push_routing_delta_sha256": "6a503fe0936a659429ba77944bf24aef939ba267a1048421af50ef3ded700c77",
-    "apple_push_routing_source_map_sha256": "9f70796cf93b47f68226d0afc1ef7e60b11e68448ffe286ed4621683e4ad7047"
+    "apple_push_routing_source_map_sha256": "9f70796cf93b47f68226d0afc1ef7e60b11e68448ffe286ed4621683e4ad7047",
+    "native_widget_continuous_admission_delta_sha256": "db0b03fa5ddb43d796cae00672683d8e48430acd250b27fbf96e23132f4b2c54",
+    "native_widget_continuous_admission_source_map_sha256": "32aa0091d6486a32aca1a089a500769dad49e1c56aa00e8a4bcc35af0dbf80fe"
   },
   "status": "NOT_AUTHORIZED",
   "supplying_source_sha": "896ccdc69447c231d04da3a6af4f27ea1f763697",
