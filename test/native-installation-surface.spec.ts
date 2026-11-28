@@ -275,7 +275,7 @@ it("credential withdrawal during native role signature verification cannot publi
  expect(await db.prepare("SELECT count(*) FROM native_installation_live_delegations").first("count(*)")).toBe(0);
 });
 
-async function reauthorizationPrepared() {
+async function reauthorizationPrepared(renew = false) {
  await enrolled();
  const apple = await crypto.subtle.generateKey({name:"ECDSA",namedCurve:"P-256"},true,["sign","verify"]) as CryptoKeyPair;
  const applePoint = await crypto.subtle.exportKey("raw",apple.publicKey);
@@ -289,10 +289,12 @@ async function reauthorizationPrepared() {
     bundle_version:installationNativePolicy.apple.minimum_bundle_version,launch_validation_category_b64:"AwAAAA=="}),
    Date.now()+240000,Date.now()+240000).run();
  const publisher=createInstallationPublisher(db,origin,()=>true);
- expect((await publisher(post("/v1/push/native/installation/publisher/withdraw",
-  {contract_version:1,pair_binding:original.pair_binding,consent_revision:2},credential.token))).status).toBe(200);
+ if (!renew) {
+  expect((await publisher(post("/v1/push/native/installation/publisher/withdraw",
+   {contract_version:1,pair_binding:original.pair_binding,consent_revision:2},credential.token))).status).toBe(200);
+ }
  const publication={...original,install_credential_id:credential.id,operation_id:"new-consent-original",
-  request_expires_at_ms:Date.now()+120000,consent_revision:3};
+  request_expires_at_ms:Date.now()+120000,consent_revision:renew ? 1 : 3};
  expect((await publisher(post("/v1/push/native/installation/publisher/operation",publication,credential.token))).status).toBe(200);
  const next={...declaration,operation_id:op(),delegation_id:"reauthorized-widget-role"};
  const signature=base64Url(await crypto.subtle.sign({name:"ECDSA",hash:"SHA-256"},key.privateKey,
@@ -350,6 +352,18 @@ it("ON/OFF/ON uses one real saved-key signature and counter CAS for a separate r
  expect((await service(post("/v1/push/surface/event",{...coordinate(value),event:"widget_reload"},bearer))).status).toBe(200);
  expect(fetcher).toHaveBeenCalledTimes(1);
 });
+it("renews a Widget role under the same device consent and withdrawal closes both roles",async()=>{
+ const x=await reauthorizationPrepared(true);
+ const response=await x.handler(post(reauthorizationPrefix+"register",await x.assertion(),credential.token));
+ expect(response.status).toBe(200);
+ expect(await db.prepare("SELECT consent_revision FROM native_installation_surface_bindings ORDER BY consent_revision").all())
+  .toMatchObject({results:[{consent_revision:1},{consent_revision:1}]});
+ const publisher=createInstallationPublisher(db,origin,()=>true);
+ expect((await publisher(post("/v1/push/native/installation/publisher/withdraw",
+  {contract_version:1,pair_binding:original.pair_binding,consent_revision:2},credential.token))).status).toBe(200);
+ expect(await db.prepare("SELECT count(*) FROM native_installation_live_delegations").first("count(*)")).toBe(0);
+});
+
 it.each(["withdraw","rotate","retire"])("reauthorization cannot win after actual %s during assertion verification",async closure=>{
  const x=await reauthorizationPrepared(),body=await x.assertion();
  const verify=crypto.subtle.verify.bind(crypto.subtle);

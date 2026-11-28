@@ -31,8 +31,7 @@ function widget(delegation:Enrolment, env:AppEnv) {
  const p=delegation.policy;
  need(p.token_role==="widget"&&p.platform==="ios"&&p.activity_profile===null&&!p.external_content_allowed&&
   p.apns_environment===env.APNS_ENVIRONMENT&&p.target.app_bundle_id==="dev.djconnect.ios"&&
-  p.target.extension_bundle_id==="dev.djconnect.ios.track-insight-widget"&&p.target.widget_kind==="DJConnectSessionWidget"&&
-  p.original_grant_expires_at_ms<=installationNativePolicy.expiresAt,"native_role_scope_mismatch",403);
+  p.target.extension_bundle_id==="dev.djconnect.ios.track-insight-widget"&&p.target.widget_kind==="DJConnectSessionWidget","native_role_scope_mismatch",403);
 }
 /** Only this principal's genuine saved Apple key and a newer exact publication qualify. */
 export function createInstallationReauthorization(env:AppEnv,current:()=>boolean) {
@@ -44,7 +43,7 @@ export function createInstallationReauthorization(env:AppEnv,current:()=>boolean
     request.url==="https://api.djconnect.dev"+reauthorizationPrefix+action&&
     !request.headers.has("origin")&&!request.headers.has("cookie"),"native_role_route_unavailable",404);
    const db=env.DB, selected=installationNativePolicy;
-   const live=()=>current()&&env.DB===db&&!request.signal.aborted&&Date.now()<selected.expiresAt;
+   const live=()=>current()&&env.DB===db&&!request.signal.aborted;
    const credential=await authenticateInstallation(request,db,live);
    const input=await readFirstKeyBody(request,action==="challenge"?8192:24576,true);
    closed(input,action==="challenge"?["contract_version","first_key_receipt","publication_operation_id","delegation","signature"]:
@@ -72,7 +71,14 @@ export function createInstallationReauthorization(env:AppEnv,current:()=>boolean
     AND k.apple_key_id_b64 IS NOT NULL AND k.apple_public_key_spki_b64 IS NOT NULL AND k.apple_assertion_policy_json IS NOT NULL
     AND typeof(k.apple_counter)='integer' AND k.apple_counter>=0 AND k.apple_counter<=4294967295
     AND k.apple_evidence_expires_at_ms>${sqlNow} AND k.apple_status_expires_at_ms>${sqlNow}
-    AND p.request_expires_at_ms>${sqlNow} AND p.consent_revision>original.consent_revision
+    AND p.request_expires_at_ms>${sqlNow} AND p.operation_id<>original.operation_id
+    AND p.consent_revision>=original.consent_revision
+    AND (p.consent_revision>original.consent_revision OR EXISTS (
+      SELECT 1 FROM native_installation_surface_bindings prior
+      WHERE prior.credential_id=k.credential_id AND prior.credential_hash=i.token_hash
+      AND prior.ha_install_id=i.ha_install_id AND prior.native_operation_id=k.operation_id
+      AND prior.native_receipt_json=k.receipt AND prior.pair_binding=p.pair_binding
+      AND prior.consent_revision=p.consent_revision))
     AND json_extract(k.original_request,'$.pairing_generation')=p.pairing_generation
     AND json_extract(k.original_request,'$.pair_binding')=p.pair_binding
     AND json_extract(k.original_request,'$.owner_binding')=p.owner_binding
@@ -80,8 +86,8 @@ export function createInstallationReauthorization(env:AppEnv,current:()=>boolean
     AND json_extract(k.original_request,'$.core_key_thumbprint')=p.core_key_thumbprint
     AND NOT EXISTS(SELECT 1 FROM native_installation_key_retirements r WHERE r.credential_id=k.credential_id AND r.pair_binding=p.pair_binding)
     AND NOT EXISTS(SELECT 1 FROM native_installation_consent_withdrawals w WHERE w.credential_id=k.credential_id
-     AND w.pair_binding=p.pair_binding AND w.through_revision>=p.consent_revision)) AND ?>${sqlNow}`;
-   const guardValues=[credential.token_hash,credential.ha_install_id,publication,credential.id,native.operation_id,nativeJSON,selected.id,selected.expiresAt];
+     AND w.pair_binding=p.pair_binding AND w.through_revision>=p.consent_revision))`;
+   const guardValues=[credential.token_hash,credential.ha_install_id,publication,credential.id,native.operation_id,nativeJSON,selected.id];
    const key=await db.prepare(`SELECT k.*,p.request_expires_at_ms,p.consent_revision FROM native_installation_first_key k
     JOIN native_installation_pair_publications p ON p.credential_id=k.credential_id AND p.operation_id=?
     WHERE k.credential_id=? AND k.operation_id=? AND ${guardSQL}`)
@@ -110,9 +116,9 @@ export function createInstallationReauthorization(env:AppEnv,current:()=>boolean
    need(exported.x===delegation.public_key.x&&exported.y===delegation.public_key.y,"native_role_key_mismatch",403);
    const original={contract_version:1,first_key_receipt:native,publication_operation_id:publication,delegation};
    const originalJSON=canonical(original);
-   const deadline=Math.min(key.request_expires_at_ms,key.apple_evidence_expires_at_ms,key.apple_status_expires_at_ms,selected.expiresAt);
+   const deadline=Math.min(key.request_expires_at_ms,key.apple_evidence_expires_at_ms,key.apple_status_expires_at_ms);
    need(Date.now()<deadline&&delegation.policy.original_grant_expires_at_ms<=Math.min(key.apple_evidence_expires_at_ms,
-    key.apple_status_expires_at_ms,selected.expiresAt),"native_role_evidence_expired",403);
+    key.apple_status_expires_at_ms),"native_role_evidence_expired",403);
    if(action==="challenge") {
     need(await crypto.subtle.verify({name:"ECDSA",hash:"SHA-256"},publicKey,bytes(input.signature as string,64),
      reauthorizationSigningBytes("challenge",native,publication,delegation))&&live(),"native_role_signature_required",403);

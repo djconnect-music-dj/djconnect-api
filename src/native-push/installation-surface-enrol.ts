@@ -25,7 +25,7 @@ export function createInstallationSurfaceEnrol(env: AppEnv, current: () => boole
    need(request.method === "POST" && request.url === "https://api.djconnect.dev" + installationEnrolPath &&
     !request.headers.has("origin") && !request.headers.has("cookie"), "native_role_route_unavailable", 404);
    const db = env.DB, policy = installationNativePolicy;
-   const live = () => current() && env.DB === db && Date.now() < policy.expiresAt && !request.signal.aborted;
+   const live = () => current() && env.DB === db && !request.signal.aborted;
    const credential = await authenticateInstallation(request, db, live);
    const input = await readFirstKeyBody(request, 8192, true);
    closed(input, ["contract_version", "first_key_receipt", "delegation", "signature"]);
@@ -51,10 +51,9 @@ export function createInstallationSurfaceEnrol(env: AppEnv, current: () => boole
     AND NOT EXISTS(SELECT 1 FROM native_installation_key_retirements r
      WHERE r.credential_id=k.credential_id AND r.pair_binding=p.pair_binding)
     AND NOT EXISTS(SELECT 1 FROM native_installation_consent_withdrawals w
-     WHERE w.credential_id=k.credential_id AND w.pair_binding=p.pair_binding AND w.through_revision>=p.consent_revision))
-    AND ?>${nowSQL}`;
+     WHERE w.credential_id=k.credential_id AND w.pair_binding=p.pair_binding AND w.through_revision>=p.consent_revision))`;
    const guardValues = [credential.token_hash, credential.ha_install_id, credential.id,
-    receipt.operation_id, originalReceipt, policy.id, policy.expiresAt];
+    receipt.operation_id, originalReceipt, policy.id];
    const row = await db.prepare(`SELECT k.receipt,k.key_spki,k.original_request,k.expires_at_ms,p.consent_revision,k.apple_evidence_expires_at_ms,k.apple_status_expires_at_ms
     FROM native_installation_first_key k JOIN native_installation_pair_publications p
     ON p.credential_id=k.credential_id AND p.operation_id=k.operation_id
@@ -67,7 +66,7 @@ export function createInstallationSurfaceEnrol(env: AppEnv, current: () => boole
     p.token_role === "widget" && p.platform === "ios" && p.activity_profile === null && p.external_content_allowed === false &&
     p.apns_environment === env.APNS_ENVIRONMENT && p.target.app_bundle_id === "dev.djconnect.ios" &&
     p.target.extension_bundle_id === "dev.djconnect.ios.track-insight-widget" && p.target.widget_kind === "DJConnectSessionWidget" &&
-    p.original_grant_expires_at_ms <= Math.min(policy.expiresAt,row.apple_evidence_expires_at_ms,row.apple_status_expires_at_ms), "native_role_scope_mismatch", 403);
+    p.original_grant_expires_at_ms <= Math.min(row.apple_evidence_expires_at_ms,row.apple_status_expires_at_ms), "native_role_scope_mismatch", 403);
    guardSQL += ` AND EXISTS(SELECT 1 FROM native_installation_first_key WHERE credential_id=? AND operation_id=? AND receipt=?
     AND apple_evidence_expires_at_ms=? AND apple_status_expires_at_ms=? AND apple_evidence_expires_at_ms>=? AND apple_status_expires_at_ms>=?)`;
    guardValues.push(credential.id,receipt.operation_id,originalReceipt,row.apple_evidence_expires_at_ms,row.apple_status_expires_at_ms,

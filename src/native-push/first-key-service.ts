@@ -76,7 +76,7 @@ export async function retireWidgetFirstKeyPair(db: D1Database, pairBinding: stri
  * this policy ID to the signed app selection and verify App Attest against the saved transcript. */
 export interface WidgetFirstKeyPolicy {
 	readonly id: string;
-	readonly expiresAt: number;
+	readonly expiresAt: number | null;
 	isCurrent(): boolean;
 	isPairCurrent(credentialId: string, original: Readonly<Original>): Promise<boolean>;
 	/** Trusted server SQL and bound coordinates for the same-statement authority check. */
@@ -211,9 +211,12 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 	const conflict = "widget_first_key_conflict";
 
 	const checkWorker = () => {
-		need(policy && (id(policyId) || production && policyId === "ios-native-push-development-40533/1") && Number.isSafeInteger(policyExpiry) &&
+		const admissionCurrent = policyExpiry === null
+			? production
+			: typeof policyExpiry === "number" && Number.isSafeInteger(policyExpiry) && Date.now() < policyExpiry;
+		need(policy && (id(policyId) || production && policyId === "ios-native-push-development-40533/1") &&
 			policy.id === policyId && policy.expiresAt === policyExpiry &&
-			Date.now() < policyExpiry! && isWorkerCurrent() && policy.isCurrent(), unavailable, 503);
+			admissionCurrent && isWorkerCurrent() && policy.isCurrent(), unavailable, 503);
 		return policy;
 	};
 	async function checkPair(credential: Credential, original: Original) {
@@ -238,7 +241,7 @@ export function createWidgetFirstKeyHandler(db: D1Database, origin: string, isWo
 			contract_version: 1, api_audience: audience, operation_id: original.operation_id,
 			api_installation_id: crypto.randomUUID(), install_credential_id: credential.id,
 			challenge_id: crypto.randomUUID(), challenge_nonce: nonce(),
-			expires_at_ms: Math.min(Date.now() + originalWindowMs, policyExpiry!), expected_key_revision: 0,
+			expires_at_ms: Math.min(Date.now() + originalWindowMs, policyExpiry ?? Infinity), expected_key_revision: 0,
 		};
 		await db.prepare(`INSERT INTO ${keysTable}
 			(credential_id, operation_id, installation_id, policy_id, pair_binding, original_request, challenge, expires_at_ms)
